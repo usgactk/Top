@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Futbol 1v1 - ONLINE</title>
+    <style>
+        body { margin: 0; background: #121212; display: flex; justify-content: center; align-items: center; height: 100vh; color: white; font-family: sans-serif; overflow: hidden; }
+        canvas { background: #2e7d32; border: 4px solid white; border-radius: 8px; max-width: 95vw; }
+        #status { position: absolute; top: 20px; font-size: 24px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="status">Bekleniyor...</div>
+    <canvas id="game"></canvas>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const canvas = document.getElementById("game");
+        const ctx = canvas.getContext("2d");
+        const statusEl = document.getElementById("status");
+
+        canvas.width = 1280; canvas.height = 720;
+
+        let myId, mySide;
+        let gameState = { players: {}, ball: {}, scores: { left: 0, right: 0 } };
+
+        // İlk bağlantıda kim olduğumuzu öğreniyoruz
+        socket.on('init', (data) => {
+            myId = data.id;
+            mySide = data.side;
+            statusEl.innerText = `Sen: ${mySide === 'left' ? 'MAVİ' : 'KIRMIZI'}`;
+        });
+
+        // Sunucudan gelen her güncellemede ekranı yeniliyoruz
+        socket.on('update', (data) => {
+            gameState = data;
+            draw();
+        });
+
+        // Kendi hareketimizi sunucuya gönderiyoruz
+        let myY = 300;
+        window.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleY = canvas.height / rect.height;
+            myY = (e.clientY - rect.top) * scaleY - 60;
+            socket.emit('move', { y: myY });
+        });
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Saha Çizgileri
+            ctx.strokeStyle = "rgba(255,255,255,0.4)";
+            ctx.lineWidth = 5;
+            ctx.strokeRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath(); ctx.moveTo(640, 0); ctx.lineTo(640, 720); ctx.stroke();
+
+            // Skorlar
+            statusEl.innerText = `MAVİ: ${gameState.scores.left} | KIRMIZI: ${gameState.scores.right}`;
+
+            // Oyuncuları Çiz
+            Object.values(gameState.players).forEach(p => {
+                ctx.fillStyle = p.side === 'left' ? '#2196F3' : '#f44336';
+                const xPos = p.side === 'left' ? 40 : 1220;
+                ctx.fillRect(xPos, p.y, 20, 120);
+            });
+
+            // Topu Çiz
+            if (gameState.ball.x) {
+                ctx.fillStyle = "white";
+                ctx.beginPath();
+                ctx.arc(gameState.ball.x, gameState.ball.y, 12, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+    </script>
+</body>
+</html>
