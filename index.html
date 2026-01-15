@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Futbol 1v1 - Online & Bot (Sesli)</title>
+    <title>Futbol 1v1 - Full Fix</title>
     <style>
         :root { --p1-color: #2196F3; --p2-color: #f44336; }
         body { margin: 0; padding: 0; overflow: hidden; background: #121212; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; touch-action: none; }
@@ -18,6 +18,10 @@
         #name-input { padding: 10px; border-radius: 5px; border: none; font-size: 1.2vw; margin-bottom: 15px; width: 250px; text-align: center; }
         #ui { position: absolute; top: 10px; width: 100%; text-align: center; color: white; font-size: 2vw; font-weight: bold; pointer-events: none; z-index: 20; }
         #countdown { position: absolute; color: #ffeb3b; font-size: 80px; font-weight: bold; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 25; display: none; text-shadow: 3px 3px 0 #000; }
+        
+        /* DURDURMA BUTONU */
+        #pause-btn { position: absolute; top: 15px; right: 15px; width: 40px; height: 40px; background: rgba(255,255,255,0.2); border: 2px solid white; color: white; border-radius: 50%; cursor: pointer; z-index: 60; display: none; align-items: center; justify-content: center; font-size: 20px; }
+        
         .ctrl-btn { position: fixed; width: 70px; height: 70px; background: rgba(255,255,255,0.1); border: 2px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 25px; z-index: 40; visibility: hidden; }
         #p1-up { left: 20px; bottom: 110px; border-color: var(--p1-color); }
         #p1-down { left: 20px; bottom: 20px; border-color: var(--p1-color); }
@@ -28,11 +32,19 @@
 <div id="game-container">
     <div id="ui"><span id="name1">MAVİ</span>: <span id="s1">0</span> | <span id="name2">KIRMIZI</span>: <span id="s2">0</span></div>
     
+    <button id="pause-btn" onclick="togglePause()">⏸</button>
+
     <div id="main-menu" class="menu-layer">
         <h1>FUTBOL 1V1</h1>
         <input type="text" id="name-input" placeholder="Adını Yaz..." maxlength="10">
         <button class="btn btn-blue" onclick="startOnlineMode()">ONLINE OYNA (PvP)</button>
         <button class="btn btn-orange" onclick="showDifficulty()">BOTA KARŞI</button>
+    </div>
+
+    <div id="pause-menu" class="menu-layer" style="display: none;">
+        <h1>DURAKLATILDI</h1>
+        <button class="btn btn-green" onclick="togglePause()">DEVAM ET</button>
+        <button class="btn btn-blue" onclick="location.reload()">ANA MENÜ</button>
     </div>
 
     <div id="difficulty-menu" class="menu-layer" style="display: none;">
@@ -58,7 +70,6 @@ const ctx = canvas.getContext("2d");
 const GW = 1280, GH = 720;
 canvas.width = GW; canvas.height = GH;
 
-// SESLER
 const sounds = {
     gol: new Audio('gol.mp3'),
     mavi: new Audio('mavi.mp3'),
@@ -71,13 +82,13 @@ function unlockSounds() {
     });
 }
 
-let socket, isOnline = false, gameActive = false, inCountdown = false;
+let socket, isOnline = false, gameActive = false, inCountdown = false, isPaused = false;
 let score1 = 0, score2 = 0;
 let p1 = { y: 300, dy: 0 }, p2 = { y: 300, dy: 0 };
 let balls = [], botParams = { skill: 0.1, speed: 8, bSpeed: 10, bCount: 1 };
 
 function startOnlineMode() {
-    unlockSounds(); //
+    unlockSounds();
     const name = document.getElementById("name-input").value.trim() || "Oyuncu";
     isOnline = true;
     document.getElementById("waiting-layer").style.display = "flex";
@@ -86,12 +97,13 @@ function startOnlineMode() {
     socket.on('gameStart', () => {
         document.getElementById("waiting-layer").style.display = "none";
         document.getElementById("main-menu").style.display = "none";
+        document.getElementById("pause-btn").style.display = "flex";
         gameActive = true;
         document.getElementById("p1-up").style.visibility = "visible";
         document.getElementById("p1-down").style.visibility = "visible";
     });
     socket.on('update', (data) => {
-        if(!isOnline) return;
+        if(!isOnline || isPaused) return;
         balls = data.balls; p1.y = data.p1.y; p2.y = data.p2.y;
         document.getElementById("s1").innerText = data.scores.p1;
         document.getElementById("s2").innerText = data.scores.p2;
@@ -101,16 +113,30 @@ function startOnlineMode() {
 }
 
 function startBotMode(skill, speed, bSpeed, bCount) {
-    unlockSounds(); //
+    unlockSounds();
     isOnline = false; gameActive = true;
-    botParams = { skill, speed, bSpeed, bCount }; //
+    botParams = { skill, speed, bSpeed, bCount };
     document.getElementById("name1").innerText = document.getElementById("name-input").value || "OYUNCU";
     document.getElementById("name2").innerText = "BOT";
     document.getElementById("main-menu").style.display = "none";
     document.getElementById("difficulty-menu").style.display = "none";
+    document.getElementById("pause-btn").style.display = "flex";
     document.getElementById("p1-up").style.visibility = "visible";
     document.getElementById("p1-down").style.visibility = "visible";
     resetLocalStage();
+}
+
+function togglePause() {
+    if(!gameActive || inCountdown) return;
+    isPaused = !isPaused;
+    const pauseMenu = document.getElementById("pause-menu");
+    if(isPaused) {
+        pauseMenu.style.display = "flex";
+        document.getElementById("pause-btn").innerText = "▶";
+    } else {
+        pauseMenu.style.display = "none";
+        document.getElementById("pause-btn").innerText = "⏸";
+    }
 }
 
 function resetLocalStage() {
@@ -119,10 +145,11 @@ function resetLocalStage() {
     countEl.style.display = "block";
     let t = 3; countEl.innerText = t;
     let inv = setInterval(() => {
+        if(isPaused) return; // Duraklatılmışsa geri sayımı durdur
         t--;
         if(t <= 0) {
             clearInterval(inv); countEl.style.display = "none"; inCountdown = false;
-            for(let i=0; i<botParams.bCount; i++) { //
+            for(let i=0; i<botParams.bCount; i++) {
                 balls.push({ x: GW/2, y: GH/2, dx: (Math.random() > 0.5 ? 1 : -1) * botParams.bSpeed, dy: (Math.random() > 0.5 ? 0.7 : -0.7) * botParams.bSpeed, r: 12 });
             }
         } else countEl.innerText = t;
@@ -131,7 +158,7 @@ function resetLocalStage() {
 
 function setupControl(id, dir) {
     const btn = document.getElementById(id);
-    const move = (e) => { e.preventDefault(); if(isOnline) socket.emit('move', { dy: dir * 18 }); else p1.dy = dir * 18; };
+    const move = (e) => { e.preventDefault(); if(isPaused) return; if(isOnline) socket.emit('move', { dy: dir * 18 }); else p1.dy = dir * 18; };
     const stop = (e) => { e.preventDefault(); if(isOnline) socket.emit('move', { dy: 0 }); else p1.dy = 0; };
     btn.addEventListener("touchstart", move); btn.addEventListener("touchend", stop);
     btn.addEventListener("mousedown", move); btn.addEventListener("mouseup", stop);
@@ -139,7 +166,7 @@ function setupControl(id, dir) {
 setupControl("p1-up", -1); setupControl("p1-down", 1);
 
 function updateLocal() {
-    if(!gameActive || inCountdown || isOnline) return;
+    if(!gameActive || inCountdown || isOnline || isPaused) return;
     p1.y += p1.dy;
     if(balls.length > 0) {
         let target = balls.reduce((prev, curr) => (curr.x > prev.x) ? curr : prev);
