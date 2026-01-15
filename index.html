@@ -3,144 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Football Legendary - Online 1v1</title>
+    <title>Football Legendary - Online Bot & VS</title>
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; background: #121212; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; touch-action: none; }
-        #game-container { position: relative; width: 95vw; height: 53.43vw; max-height: 95vh; max-width: 168.88vh; background: #2e7d32; border: 4px solid white; border-radius: 8px; }
+        :root { --p1-color: #2196F3; --p2-color: #f44336; }
+        body { margin: 0; padding: 0; overflow: hidden; background: #121212; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; touch-action: none; }
+        #game-container { position: relative; width: 95vw; height: 53.43vw; max-height: 95vh; max-width: 168.88vh; background: #2e7d32; border: 4px solid white; border-radius: 8px; overflow: hidden; }
         canvas { width: 100%; height: 100%; display: block; }
-        #ui { position: absolute; top: 10px; width: 100%; text-align: center; color: white; font-size: 2vw; font-weight: bold; pointer-events: none; z-index: 10; }
-        #overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.8); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; z-index: 50; text-align: center; }
-        .btn { padding: 15px 40px; font-size: 1.5vw; cursor: pointer; border: none; color: white; background: #4CAF50; border-radius: 50px; font-weight: bold; transition: 0.2s; }
-        .btn:hover { transform: scale(1.1); }
+        .menu-layer { position: absolute; inset: 0; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 50; color: white; text-align: center; }
+        .btn { padding: 12px 30px; font-size: 1.2vw; cursor: pointer; border: none; color: white; border-radius: 50px; font-weight: bold; margin: 5px; min-width: 180px; transition: 0.2s; }
+        .btn-green { background: #4CAF50; } .btn-blue { background: #2196F3; } .btn-red { background: #f44336; }
+        #ui { position: absolute; top: 10px; width: 100%; text-align: center; color: white; font-size: 2vw; font-weight: bold; z-index: 10; pointer-events: none; }
+        #countdown { position: absolute; color: #ffeb3b; font-size: 80px; font-weight: bold; top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; z-index: 15; }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <div id="ui">
-        <span id="p1-name">MAVİ</span>: <span id="s1">0</span> | 
-        <span id="p2-name">KIRMIZI</span>: <span id="s2">0</span>
+    <div id="ui">MAVİ: <span id="s1">0</span> | KIRMIZI: <span id="s2">0</span></div>
+    
+    <div id="main-menu" class="menu-layer">
+        <h1>FOOTBALL LEGENDARY</h1>
+        <button class="btn btn-green" onclick="startOnline('pvp', 0, 0, 12, 1)">2 OYUNCU (VS)</button>
+        <button class="btn btn-blue" onclick="showDifficulty()">BOTA KARŞI</button>
     </div>
 
-    <div id="overlay">
-        <h1 id="msg">Football Legendary</h1>
-        <p id="sub-msg">Oyunun başlaması için 2 oyuncu gerekiyor.</p>
-        <button id="start-btn" class="btn" onclick="connect()">OYUNA GİR</button>
+    <div id="difficulty-menu" class="menu-layer" style="display: none;">
+        <h1>ZORLUK SEÇ</h1>
+        <button class="btn btn-green" onclick="startOnline('bot', 0.07, 8, 11, 1)">KOLAY</button>
+        <button class="btn btn-blue" onclick="startOnline('bot', 0.16, 13, 17, 1)">ORTA</button>
+        <button class="btn btn-red" onclick="startOnline('bot', 0.35, 19, 17, 2)">ZOR (2 TOP!)</button>
     </div>
 
+    <div id="countdown">3</div>
     <canvas id="game"></canvas>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
-
 <script>
+const socket = io();
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-const overlay = document.getElementById("overlay");
-const msg = document.getElementById("msg");
-const subMsg = document.getElementById("sub-msg");
+const countEl = document.getElementById("countdown");
 
-const GW = 1280, GH = 720;
-canvas.width = GW;
-canvas.height = GH;
+canvas.width = 1280; canvas.height = 720;
+let myId, mySide, players = {}, balls = [], myY = 300;
 
-let socket;
-let myId, mySide;
-let players = {};
-let ball = { x: GW/2, y: GH/2, r: 12 };
-let scores = { left: 0, right: 0 };
-let myY = GH/2 - 60;
+socket.on('init', (data) => {
+    myId = data.id; mySide = data.side;
+});
 
-function connect() {
-    socket = io(); // Sunucuya bağlan
-    document.getElementById("start-btn").style.display = "none";
-    subMsg.innerText = "Sunucuya bağlanıldı, rakip bekleniyor...";
+socket.on('update', (data) => {
+    players = data.players;
+    balls = data.balls;
+    document.getElementById("s1").innerText = data.scores.left;
+    document.getElementById("s2").innerText = data.scores.right;
+    draw();
+});
 
-    // Kim olduğumuzu öğreniyoruz
-    socket.on('init', (data) => {
-        myId = data.id;
-        mySide = data.side;
-        msg.innerText = mySide === 'left' ? "SEN MAVİ TAKIMSIN" : "SEN KIRMIZI TAKIMSIN";
-    });
+socket.on('goal', () => {
+    countEl.style.display = "block";
+    let t = 3; countEl.innerText = t;
+    let inv = setInterval(() => {
+        t--;
+        if(t <= 0) { clearInterval(inv); countEl.style.display = "none"; }
+        else countEl.innerText = t;
+    }, 1000);
+});
 
-    // Sunucudan gelen her güncellemeyi al
-    socket.on('update', (data) => {
-        players = data.players;
-        ball = data.ball;
-        scores = data.scores;
-        
-        // Eğer 2 oyuncu da varsa ekranı temizle
-        if (Object.keys(players).length >= 2) {
-            overlay.style.display = "none";
-        }
-        draw();
+function startOnline(mode, skill, speed, bSpeed, bCount) {
+    document.querySelectorAll('.menu-layer').forEach(m => m.style.display = 'none');
+    socket.emit('startConfig', {
+        isBotMode: mode === 'bot',
+        botSkill: skill,
+        botSpeed: speed,
+        ballSpeed: bSpeed,
+        ballCount: bCount
     });
 }
 
-// Kontroller (Mouse veya Dokunmatik)
+function showDifficulty() {
+    document.getElementById("main-menu").style.display = "none";
+    document.getElementById("difficulty-menu").style.display = "flex";
+}
+
 window.addEventListener('mousemove', (e) => {
-    if (!socket || !mySide) return;
-    
     const rect = canvas.getBoundingClientRect();
-    const scaleY = GH / rect.height;
+    const scaleY = 720 / rect.height;
     myY = (e.clientY - rect.top) * scaleY - 60;
-
-    // Sınırlar
-    if (myY < 0) myY = 0;
-    if (myY > GH - 120) myY = GH - 120;
-
-    // Hareketimizi sunucuya gönder
     socket.emit('move', { y: myY });
 });
 
-// Dokunmatik kontroller için
-window.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-    const touch = e.touches[0];
-    const rect = canvas.getBoundingClientRect();
-    const scaleY = GH / rect.height;
-    myY = (touch.clientY - rect.top) * scaleY - 60;
-    
-    if (myY < 0) myY = 0;
-    if (myY > GH - 120) myY = GH - 120;
-
-    socket.emit('move', { y: myY });
-}, { passive: false });
-
 function draw() {
-    // Sahayı temizle
-    ctx.clearRect(0, 0, GW, GH);
-
-    // Saha Çizgileri
-    ctx.strokeStyle = "rgba(255,255,255,0.4)";
+    ctx.clearRect(0, 0, 1280, 720);
+    ctx.strokeStyle = "rgba(255,255,255,0.3)";
     ctx.lineWidth = 5;
-    ctx.strokeRect(0, 0, GW, GH);
-    ctx.beginPath(); ctx.moveTo(GW/2, 0); ctx.lineTo(GW/2, GH); ctx.stroke();
-    ctx.beginPath(); ctx.arc(GW/2, GH/2, 80, 0, Math.PI*2); ctx.stroke();
+    ctx.strokeRect(0, 0, 1280, 720);
+    ctx.beginPath(); ctx.moveTo(640, 0); ctx.lineTo(640, 720); ctx.stroke();
 
-    // Skorları Güncelle
-    document.getElementById("s1").innerText = scores.left;
-    document.getElementById("s2").innerText = scores.right;
-
-    // Oyuncuları Çiz
     Object.values(players).forEach(p => {
         ctx.fillStyle = p.side === 'left' ? "#2196F3" : "#f44336";
-        const xPos = p.side === 'left' ? 40 : GW - 60;
-        ctx.fillRect(xPos, p.y, 20, 120);
-        
-        // Kendi raketimizin etrafına beyaz bir çerçeve çizelim ki karışmasın
-        if (p.id === myId) {
-            ctx.strokeStyle = "white";
-            ctx.lineWidth = 2;
-            ctx.strokeRect(xPos, p.y, 20, 120);
-        }
+        ctx.fillRect(p.side === 'left' ? 40 : 1220, p.y, 20, 120);
     });
 
-    // Topu Çiz
     ctx.fillStyle = "white";
-    ctx.beginPath();
-    ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
-    ctx.fill();
+    balls.forEach(ball => {
+        ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
+    });
 }
 </script>
 </body>
