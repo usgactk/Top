@@ -3,22 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Futbol 1v1 - Hibrit (Online & Bot)</title>
+    <title>Futbol 1v1 - Online & Bot</title>
     <style>
         :root { --p1-color: #2196F3; --p2-color: #f44336; }
         body { margin: 0; padding: 0; overflow: hidden; background: #121212; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; touch-action: none; }
         #game-container { position: relative; width: 95vw; height: 53.43vw; max-height: 95vh; max-width: 168.88vh; background: #2e7d32; border: 4px solid white; overflow: hidden; border-radius: 8px; }
-        canvas { width: 100%; height: 100%; display: block; position: absolute; top:0; left:0; }
-        #fx-canvas { pointer-events: none; z-index: 10; }
+        canvas { width: 100%; height: 100%; display: block; }
         .menu-layer { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 50; color: white; text-align: center; }
         h1 { font-size: 5vw; margin-bottom: 10px; }
-        .btn { padding: 12px 30px; font-size: 1.2vw; cursor: pointer; border: none; color: white; border-radius: 50px; font-weight: bold; margin: 5px; min-width: 180px; }
+        .btn { padding: 12px 30px; font-size: 1.2vw; cursor: pointer; border: none; color: white; border-radius: 50px; font-weight: bold; margin: 5px; min-width: 180px; transition: 0.2s; }
         .btn-green { background: #4CAF50; }
         .btn-blue { background: #2196F3; }
         .btn-orange { background: #ff9800; }
+        .btn:hover { transform: scale(1.05); }
         #name-input { padding: 10px; border-radius: 5px; border: none; font-size: 1.2vw; margin-bottom: 15px; width: 250px; text-align: center; }
         #ui { position: absolute; top: 10px; width: 100%; text-align: center; color: white; font-size: 2vw; font-weight: bold; pointer-events: none; z-index: 20; }
-        #countdown { position: absolute; color: #ffeb3b; font-size: 80px; font-weight: bold; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 25; display: none; }
+        #countdown { position: absolute; color: #ffeb3b; font-size: 80px; font-weight: bold; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 25; display: none; text-shadow: 3px 3px 0 #000; }
         .ctrl-btn { position: fixed; width: 70px; height: 70px; background: rgba(255,255,255,0.1); border: 2px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 25px; z-index: 40; visibility: hidden; }
         #p1-up { left: 20px; bottom: 110px; border-color: var(--p1-color); }
         #p1-down { left: 20px; bottom: 20px; border-color: var(--p1-color); }
@@ -40,20 +40,18 @@
 
     <div id="difficulty-menu" class="menu-layer" style="display: none;">
         <h1>ZORLUK SEÇ</h1>
-        <button class="btn btn-green" onclick="startBotMode(0.05, 7, 10, 1, 0.3)">KOLAY</button>
-        <button class="btn btn-blue" onclick="startBotMode(0.12, 11, 15, 1, 0.15)">ORTA</button>
-        <button class="btn btn-red" style="background:#f44336" onclick="startBotMode(0.25, 15, 16, 2, 0.05)">ZOR</button>
+        <button class="btn btn-green" onclick="startBotMode(0.06, 7, 10, 1)">KOLAY</button>
+        <button class="btn btn-blue" onclick="startBotMode(0.12, 11, 14, 1)">ORTA</button>
+        <button class="btn btn-red" style="background:#f44336" onclick="startBotMode(0.25, 15, 16, 2)">ZOR (2 TOP!)</button>
         <button class="btn" style="background:#555" onclick="backToMain()">GERİ</button>
     </div>
 
     <div id="waiting-layer" class="menu-layer" style="display: none;">
         <h1>RAKİP BEKLENİYOR...</h1>
-        <p>Sunucuya bağlanıldı, bir oyuncu daha gelince maç başlayacak.</p>
     </div>
 
     <div id="countdown">3</div>
     <canvas id="game"></canvas>
-    <canvas id="fx-canvas"></canvas>
 </div>
 
 <div class="ctrl-btn" id="p1-up">▲</div>
@@ -65,42 +63,32 @@
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-const fxCanvas = document.getElementById("fx-canvas");
-const fxCtx = fxCanvas.getContext("2d");
 const GW = 1280, GH = 720;
-canvas.width = fxCanvas.width = GW; canvas.height = fxCanvas.height = GH;
+canvas.width = GW; canvas.height = GH;
 
 let socket;
-let isOnline = false, mySide = null;
-let gameActive = false, inCountdown = false;
+let isOnline = false, gameActive = false, inCountdown = false;
 let score1 = 0, score2 = 0;
-let p1 = { x: 40, y: 300, dy: 0 }, p2 = { x: 1220, y: 300, dy: 0 };
+let p1 = { y: 300, dy: 0 }, p2 = { y: 300, dy: 0 };
 let balls = [];
-let isBotMode = false, botParams = {};
+let botParams = { skill: 0.1, speed: 8, bSpeed: 10, bCount: 1 };
 
-// --- ONLINE MANTIĞI ---
+// --- ONLINE MOD ---
 function startOnlineMode() {
     const name = document.getElementById("name-input").value.trim() || "Oyuncu";
     isOnline = true;
     document.getElementById("waiting-layer").style.display = "flex";
-    
     socket = io();
     socket.emit('joinGame', { name: name });
-
-    socket.on('init', (data) => { mySide = data.side; });
-
     socket.on('gameStart', () => {
         document.getElementById("waiting-layer").style.display = "none";
         document.getElementById("main-menu").style.display = "none";
         gameActive = true;
         showControls(true);
     });
-
     socket.on('update', (data) => {
         if(!isOnline) return;
-        balls = data.balls;
-        p1.y = data.p1.y;
-        p2.y = data.p2.y;
+        balls = data.balls; p1.y = data.p1.y; p2.y = data.p2.y;
         document.getElementById("s1").innerText = data.scores.p1;
         document.getElementById("s2").innerText = data.scores.p2;
         document.getElementById("name1").innerText = data.names.p1;
@@ -108,15 +96,14 @@ function startOnlineMode() {
     });
 }
 
-// --- BOT MODU MANTIĞI (ESKİ KODUN) ---
-function startBotMode(skill, speed, bSpeed, bCount, error) {
-    isOnline = false; isBotMode = true;
-    botParams = {skill, speed, bSpeed, bCount, error};
+// --- BOT MODU ---
+function startBotMode(skill, speed, bSpeed, bCount) {
+    isOnline = false; gameActive = true;
+    botParams = { skill, speed, bSpeed, bCount };
     document.getElementById("name1").innerText = document.getElementById("name-input").value || "OYUNCU";
     document.getElementById("name2").innerText = "BOT";
     document.getElementById("main-menu").style.display = "none";
     document.getElementById("difficulty-menu").style.display = "none";
-    gameActive = true;
     showControls(true);
     resetLocalStage();
 }
@@ -137,42 +124,57 @@ function resetLocalStage() {
     }, 1000);
 }
 
-// --- ORTAK ÇİZİM VE KONTROL ---
+// --- KONTROLLER ---
 function showControls(show) {
     const vis = show ? "visible" : "hidden";
     document.getElementById("p1-up").style.visibility = vis;
     document.getElementById("p1-down").style.visibility = vis;
-    if(!isBotMode) {
-        document.getElementById("p2-up").style.visibility = vis;
-        document.getElementById("p2-down").style.visibility = vis;
+    if(!isOnline) { // Bot modunda 2. taraf butonlarını gizle
+        document.getElementById("p2-up").style.visibility = "hidden";
+        document.getElementById("p2-down").style.visibility = "hidden";
     }
 }
 
-function setupControl(id, player, dir) {
+function setupControl(id, dir, playerNum) {
     const btn = document.getElementById(id);
-    const move = (e) => { e.preventDefault(); if(gameActive) { if(isOnline) socket.emit('move', {dy: dir * 18}); else player.dy = dir * 18; }};
-    const stop = (e) => { e.preventDefault(); if(isOnline) socket.emit('move', {dy: 0}); else player.dy = 0; };
+    const move = (e) => { 
+        e.preventDefault(); 
+        if(!gameActive || inCountdown) return;
+        if(isOnline) socket.emit('move', { dy: dir * 18 });
+        else { if(playerNum === 1) p1.dy = dir * 18; else p2.dy = dir * 18; }
+    };
+    const stop = (e) => { 
+        e.preventDefault();
+        if(isOnline) socket.emit('move', { dy: 0 });
+        else { if(playerNum === 1) p1.dy = 0; else p2.dy = 0; }
+    };
     btn.addEventListener("touchstart", move); btn.addEventListener("touchend", stop);
     btn.addEventListener("mousedown", move); btn.addEventListener("mouseup", stop);
 }
-setupControl("p1-up", p1, -1); setupControl("p1-down", p1, 1);
-setupControl("p2-up", p2, -1); setupControl("p2-down", p2, 1);
+setupControl("p1-up", -1, 1); setupControl("p1-down", 1, 1);
+setupControl("p2-up", -1, 2); setupControl("p2-down", 1, 2);
 
+// --- YEREL FİZİK (BOT İÇİN) ---
 function updateLocal() {
     if(!gameActive || inCountdown || isOnline) return;
     p1.y += p1.dy;
-    if(isBotMode) { // Bot Zekası
-        if(balls.length > 0) {
-            let target = balls[0];
-            let diff = (target.y - 60) - p2.y;
-            p2.y += diff * botParams.skill;
-        }
-    } else { p2.y += p2.dy; }
-    
-    // Sınırlar ve Top Fiziği (Eski kodundaki fizik buraya eklendi)
+    // Bot Hareketi
+    if(balls.length > 0) {
+        let target = balls[0];
+        let diff = (target.y - 60) - p2.y;
+        p2.y += diff * botParams.skill;
+    }
+    // Sınırlar
+    if(p1.y < 0) p1.y = 0; if(p1.y > GH-120) p1.y = GH-120;
+    if(p2.y < 0) p2.y = 0; if(p2.y > GH-120) p2.y = GH-120;
+
     balls.forEach(b => {
         b.x += b.dx; b.y += b.dy;
-        if(b.y < 0 || b.y > GH) b.dy *= -1;
+        if(b.y < 12 || b.y > GH-12) b.dy *= -1;
+        // Çarpışma
+        if(b.x < 60 && b.y > p1.y && b.y < p1.y + 120) b.dx = Math.abs(b.dx) * 1.05;
+        if(b.x > GW-60 && b.y > p2.y && b.y < p2.y + 120) b.dx = -Math.abs(b.dx) * 1.05;
+        // Skor
         if(b.x < 0) { score2++; document.getElementById("s2").innerText = score2; resetLocalStage(); }
         if(b.x > GW) { score1++; document.getElementById("s1").innerText = score1; resetLocalStage(); }
     });
@@ -180,14 +182,13 @@ function updateLocal() {
 
 function draw() {
     ctx.clearRect(0, 0, GW, GH);
-    // Saha Çizimi
-    ctx.strokeStyle = "white"; ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(255,255,255,0.4)"; ctx.lineWidth = 5;
     ctx.strokeRect(0, 0, GW, GH);
     ctx.beginPath(); ctx.moveTo(GW/2, 0); ctx.lineTo(GW/2, GH); ctx.stroke();
-    // Raketler
+    
     ctx.fillStyle = "#2196F3"; ctx.fillRect(40, p1.y, 20, 120);
-    ctx.fillStyle = "#f44336"; ctx.fillRect(1220, p2.y, 20, 120);
-    // Toplar
+    ctx.fillStyle = "#f44336"; ctx.fillRect(GW-60, p2.y, 20, 120);
+    
     ctx.fillStyle = "white";
     balls.forEach(b => { ctx.beginPath(); ctx.arc(b.x, b.y, 12, 0, Math.PI*2); ctx.fill(); });
     
