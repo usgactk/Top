@@ -3,277 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Futbol 1v1 - Tam Fix</title>
+    <title>Football Legendary - Online 1v1</title>
     <style>
-        :root { --p1-color: #2196F3; --p2-color: #f44336; }
         body { margin: 0; padding: 0; overflow: hidden; background: #121212; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; touch-action: none; }
-        #game-container { position: relative; width: 95vw; height: 53.43vw; max-height: 95vh; max-width: 168.88vh; background: #2e7d32; border: 4px solid white; overflow: hidden; border-radius: 8px; }
+        #game-container { position: relative; width: 95vw; height: 53.43vw; max-height: 95vh; max-width: 168.88vh; background: #2e7d32; border: 4px solid white; border-radius: 8px; }
         canvas { width: 100%; height: 100%; display: block; }
-        #fx-canvas { position: absolute; inset: 0; pointer-events: none; z-index: 100; }
-        .menu-layer { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 50; color: white; text-align: center; }
-        h1 { font-size: 5vw; margin-bottom: 10px; text-shadow: 0 5px 15px rgba(0,0,0,0.5); }
-        .btn { padding: 12px 30px; font-size: 1.2vw; cursor: pointer; border: none; color: white; border-radius: 50px; font-weight: bold; transition: 0.2s; margin: 5px; min-width: 180px; }
-        .btn-green { background: #4CAF50; }
-        .btn-blue { background: #2196F3; }
-        .btn-orange { background: #ff9800; }
-        .btn-red { background: #f44336; }
-        .btn:hover { transform: scale(1.05); opacity: 0.9; }
-        #pause-btn { position: absolute; top: 15px; right: 15px; width: 35px; height: 35px; background: rgba(255,255,255,0.2); border: 1.5px solid white; color: white; border-radius: 50%; cursor: pointer; z-index: 40; display: none; align-items: center; justify-content: center; }
         #ui { position: absolute; top: 10px; width: 100%; text-align: center; color: white; font-size: 2vw; font-weight: bold; pointer-events: none; z-index: 10; }
-        #countdown { position: absolute; color: #ffeb3b; font-size: 80px; font-weight: bold; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; display: none; text-shadow: 3px 3px 0 #000; z-index: 15; }
-        .ctrl-btn { position: fixed; width: 70px; height: 70px; background: rgba(255,255,255,0.1); border: 2px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 25px; user-select: none; z-index: 30; visibility: hidden; }
-        #p1-up { left: 20px; bottom: 110px; border-color: var(--p1-color); }
-        #p1-down { left: 20px; bottom: 20px; border-color: var(--p1-color); }
-        #p2-up { right: 20px; bottom: 110px; border-color: var(--p2-color); }
-        #p2-down { right: 20px; bottom: 20px; border-color: var(--p2-color); }
+        #overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.8); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; z-index: 50; text-align: center; }
+        .btn { padding: 15px 40px; font-size: 1.5vw; cursor: pointer; border: none; color: white; background: #4CAF50; border-radius: 50px; font-weight: bold; transition: 0.2s; }
+        .btn:hover { transform: scale(1.1); }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <div id="ui">MAVİ: <span id="s1">0</span> | KIRMIZI: <span id="s2">0</span></div>
-    
-    <div id="main-menu" class="menu-layer">
-        <h1>FUTBOL 1V1</h1>
-        <button class="btn btn-green" onclick="startMode('pvp', 0, 0, 12, 1, 0)">2 OYUNCU (VS)</button>
-        <button class="btn btn-orange" onclick="showDifficulty()">BOTA KARŞI (KIRMIZI BOT)</button>
+    <div id="ui">
+        <span id="p1-name">MAVİ</span>: <span id="s1">0</span> | 
+        <span id="p2-name">KIRMIZI</span>: <span id="s2">0</span>
     </div>
 
-    <div id="difficulty-menu" class="menu-layer" style="display: none;">
-        <h1>ZORLUK SEÇ</h1>
-        <button class="btn btn-green" onclick="startMode('bot', 0.05, 7, 10, 1, 0.3)">KOLAY</button>
-        <button class="btn btn-blue" onclick="startMode('bot', 0.12, 11, 15, 1, 0.15)">ORTA</button>
-        <button class="btn btn-red" onclick="startMode('bot', 0.25, 15, 16, 2, 0.05)">ZOR (2 TOP!)</button>
-        <button class="btn" style="background:#555" onclick="backToMain()">GERİ</button>
+    <div id="overlay">
+        <h1 id="msg">Football Legendary</h1>
+        <p id="sub-msg">Oyunun başlaması için 2 oyuncu gerekiyor.</p>
+        <button id="start-btn" class="btn" onclick="connect()">OYUNA GİR</button>
     </div>
 
-    <div id="pause-menu" class="menu-layer" style="display: none;">
-        <h1>DURAKLATILDI</h1>
-        <button class="btn btn-green" onclick="resumeGame()">DEVAM ET</button>
-        <button class="btn btn-blue" onclick="backToMain()">ANA MENÜ</button>
-    </div>
-
-    <div id="end-menu" class="menu-layer" style="display: none;">
-        <h1 id="win-msg">MAVİ KAZANDI!</h1>
-        <button class="btn btn-green" onclick="initGame()">TEKRAR OYNA</button>
-        <button class="btn btn-blue" onclick="backToMain()">ANA MENÜ</button>
-    </div>
-
-    <button id="pause-btn" onclick="togglePause()">⏸</button>
-    <div id="countdown">3</div>
-    
     <canvas id="game"></canvas>
-    <canvas id="fx-canvas"></canvas>
 </div>
 
-<div class="ctrl-btn" id="p1-up">▲</div>
-<div class="ctrl-btn" id="p1-down">▼</div>
-<div class="ctrl-btn" id="p2-up">▲</div>
-<div class="ctrl-btn" id="p2-down">▼</div>
+<script src="/socket.io/socket.io.js"></script>
 
 <script>
-// (Önceki kodun aynısı, sadece startMode ve resetStage mantığı güncellendi)
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-const fxCanvas = document.getElementById("fx-canvas");
-const fxCtx = fxCanvas.getContext("2d");
-const countEl = document.getElementById("countdown");
-const pauseBtn = document.getElementById("pause-btn");
-
-const sounds = {
-    gol: new Audio('gol.mp3'),
-    mavi: new Audio('mavi.mp3'),
-    kirmizi: new Audio('kirmizi.mp3')
-};
-
-function unlockSounds() {
-    Object.values(sounds).forEach(s => {
-        s.play().then(() => { s.pause(); s.currentTime = 0; }).catch(() => {});
-    });
-}
+const overlay = document.getElementById("overlay");
+const msg = document.getElementById("msg");
+const subMsg = document.getElementById("sub-msg");
 
 const GW = 1280, GH = 720;
-canvas.width = fxCanvas.width = GW;
-canvas.height = fxCanvas.height = GH;
+canvas.width = GW;
+canvas.height = GH;
 
-let score1 = 0, score2 = 0, gameActive = false, isPaused = false, inCountdown = false;
-let isBotMode = false, botSkill = 0.1, botSpeed = 8, ballBaseSpeed = 10, ballCount = 1, botError = 0.1;
+let socket;
+let myId, mySide;
+let players = {};
+let ball = { x: GW/2, y: GH/2, r: 12 };
+let scores = { left: 0, right: 0 };
+let myY = GH/2 - 60;
 
-const paddleW = 20, paddleH = 120;
-const p1 = { x: 40, y: GH/2 - 60, dy: 0, color: "#2196F3" };
-const p2 = { x: GW - 60, y: GH/2 - 60, dy: 0, color: "#f44336" };
-let balls = [];
+function connect() {
+    socket = io(); // Sunucuya bağlan
+    document.getElementById("start-btn").style.display = "none";
+    subMsg.innerText = "Sunucuya bağlanıldı, rakip bekleniyor...";
 
-function createBall(speed) {
-    return { x: GW/2, y: GH/2, dx: (Math.random() > 0.5 ? 1 : -1) * speed, dy: (Math.random() > 0.5 ? 0.7 : -0.7) * speed, r: 12 };
-}
+    // Kim olduğumuzu öğreniyoruz
+    socket.on('init', (data) => {
+        myId = data.id;
+        mySide = data.side;
+        msg.innerText = mySide === 'left' ? "SEN MAVİ TAKIMSIN" : "SEN KIRMIZI TAKIMSIN";
+    });
 
-let particles = [];
-function createFirework() {
-    const x = Math.random() * GW, y = Math.random() * (GH / 2);
-    const color = `hsl(${Math.random() * 360}, 100%, 60%)`;
-    for (let i = 0; i < 40; i++) {
-        const angle = Math.random() * Math.PI * 2, velocity = Math.random() * 6 + 2;
-        particles.push({ x, y, dx: Math.cos(angle) * velocity, dy: Math.sin(angle) * velocity, r: Math.random() * 4 + 1, color, alpha: 1 });
-    }
-}
-
-function updateAndDrawFX() {
-    fxCtx.clearRect(0, 0, GW, GH);
-    for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        p.x += p.dx; p.y += p.dy; p.dy += 0.05; p.alpha -= 0.015;
-        if (p.alpha <= 0) particles.splice(i, 1);
-        else { fxCtx.globalAlpha = p.alpha; fxCtx.fillStyle = p.color; fxCtx.beginPath(); fxCtx.arc(p.x, p.y, p.r, 0, Math.PI*2); fxCtx.fill(); }
-    }
-    requestAnimationFrame(updateAndDrawFX);
-}
-updateAndDrawFX();
-
-function setupControl(id, player, dir) {
-    const btn = document.getElementById(id);
-    const start = (e) => { e.preventDefault(); if(gameActive && !isPaused) player.dy = dir * 18; };
-    const stop = (e) => { e.preventDefault(); player.dy = 0; };
-    btn.addEventListener("touchstart", start); btn.addEventListener("touchend", stop);
-    btn.addEventListener("mousedown", start); btn.addEventListener("mouseup", stop);
-}
-setupControl("p1-up", p1, -1); setupControl("p1-down", p1, 1);
-setupControl("p2-up", p2, -1); setupControl("p2-down", p2, 1);
-
-window.addEventListener("keydown", (e) => {
-    if(e.key === "w" || e.key === "W") p1.dy = -18;
-    if(e.key === "s" || e.key === "S") p1.dy = 18;
-    if(!isBotMode) { if(e.key === "ArrowUp") p2.dy = -18; if(e.key === "ArrowDown") p2.dy = 18; }
-});
-window.addEventListener("keyup", (e) => {
-    if(e.key === "w" || e.key === "W" || e.key === "s" || e.key === "S") p1.dy = 0;
-    if(!isBotMode && (e.key === "ArrowUp" || e.key === "ArrowDown")) p2.dy = 0;
-});
-
-function showLayer(id) {
-    document.querySelectorAll('.menu-layer').forEach(l => l.style.display = 'none');
-    if(id) document.getElementById(id).style.display = 'flex';
-}
-
-function showDifficulty() { showLayer('difficulty-menu'); }
-
-function startMode(mode, skill, speed, bSpeed, bCount, error) {
-    unlockSounds();
-    isBotMode = (mode === 'bot');
-    botSkill = skill;
-    botSpeed = speed;
-    ballBaseSpeed = bSpeed;
-    ballCount = bCount;
-    botError = error;
-    initGame();
-}
-
-function initGame() {
-    score1 = 0; score2 = 0; particles = [];
-    document.getElementById("s1").innerText = 0;
-    document.getElementById("s2").innerText = 0;
-    showLayer(null);
-    gameActive = true; isPaused = false;
-    pauseBtn.style.display = "flex";
-    document.getElementById("p1-up").style.visibility = "visible";
-    document.getElementById("p1-down").style.visibility = "visible";
-    const p2Vis = isBotMode ? "hidden" : "visible";
-    document.getElementById("p2-up").style.visibility = p2Vis;
-    document.getElementById("p2-down").style.visibility = p2Vis;
-    resetStage(false);
-}
-
-function togglePause() {
-    if(inCountdown || !gameActive) return;
-    isPaused = !isPaused;
-    if(isPaused) { showLayer('pause-menu'); pauseBtn.innerText = "▶"; } 
-    else { resumeGame(); }
-}
-
-function resumeGame() { isPaused = false; showLayer(null); pauseBtn.innerText = "⏸"; }
-
-function backToMain() {
-    gameActive = false; showLayer('main-menu');
-    pauseBtn.style.display = "none";
-    document.querySelectorAll('.ctrl-btn').forEach(b => b.style.visibility = "hidden");
-}
-
-function resetStage(shouldPlayGol) {
-    inCountdown = true;
-    balls = [];
-    if (score1 >= 3 || score2 >= 3) {
-        gameActive = false;
-        pauseBtn.style.display = "none";
-        document.getElementById("win-msg").innerText = score1 >= 3 ? "MAVİ KAZANDI!" : "KIRMIZI KAZANDI!";
-        showLayer('end-menu');
-        score1 >= 3 ? sounds.mavi.play() : sounds.kirmizi.play();
-        let c = 0, t = setInterval(() => { createFirework(); c++; if (c > 15) clearInterval(t); }, 250);
-        return;
-    }
-    if (shouldPlayGol) { sounds.gol.currentTime = 0; sounds.gol.play(); }
-    countEl.style.display = "block";
-    let t = 3; countEl.innerText = t;
-    let inv = setInterval(() => {
-        if(isPaused) return; 
-        t--;
-        if(t <= 0) { 
-            clearInterval(inv); countEl.style.display = "none"; inCountdown = false;
-            // TOPU BURADA OLUŞTURUYORUZ:
-            for(let i=0; i < ballCount; i++) balls.push(createBall(ballBaseSpeed));
-        } else countEl.innerText = t;
-    }, 1000);
-}
-
-function update() {
-    if (!gameActive || isPaused || inCountdown) return;
-    p1.y += p1.dy;
-    if (isBotMode && balls.length > 0) {
-        let targetBall = balls.reduce((prev, curr) => (curr.x > prev.x) ? curr : prev);
-        let offset = (Math.sin(Date.now() / 500) * paddleH * botError);
-        let targetY = targetBall.y - paddleH / 2 + offset;
-        if (targetBall.x > GW / 3) {
-            let diff = targetY - p2.y;
-            p2.y += diff * botSkill;
-            if (Math.abs(diff) > botSpeed) p2.y = p2.y - (diff * botSkill) + (Math.sign(diff) * botSpeed);
+    // Sunucudan gelen her güncellemeyi al
+    socket.on('update', (data) => {
+        players = data.players;
+        ball = data.ball;
+        scores = data.scores;
+        
+        // Eğer 2 oyuncu da varsa ekranı temizle
+        if (Object.keys(players).length >= 2) {
+            overlay.style.display = "none";
         }
-    } else {
-        p2.y += p2.dy;
-    }
-    if (p1.y < 0) p1.y = 0; if (p1.y > GH - paddleH) p1.y = GH - paddleH;
-    if (p2.y < 0) p2.y = 0; if (p2.y > GH - paddleH) p2.y = GH - paddleH;
-    balls.forEach((ball) => {
-        ball.x += ball.dx; ball.y += ball.dy;
-        if (ball.y <= ball.r || ball.y >= GH - ball.r) ball.dy *= -1;
-        if (ball.x - ball.r < p1.x + paddleW && ball.y > p1.y && ball.y < p1.y + paddleH) {
-            ball.dx = Math.abs(ball.dx) * 1.05;
-            ball.dy += p1.dy * 0.25;
-            ball.x = p1.x + paddleW + ball.r;
-        }
-        if (ball.x + ball.r > p2.x && ball.y > p2.y && ball.y < p2.y + paddleH) {
-            ball.dx = -Math.abs(ball.dx) * 1.05;
-            ball.dy += (isBotMode ? (Math.random()-0.5)*7 : p2.dy * 0.25);
-            ball.x = p2.x - ball.r;
-        }
-        if (ball.x < 0) { score2++; document.getElementById("s2").innerText = score2; resetStage(true); }
-        else if (ball.x > GW) { score1++; document.getElementById("s1").innerText = score1; resetStage(true); }
+        draw();
     });
 }
 
+// Kontroller (Mouse veya Dokunmatik)
+window.addEventListener('mousemove', (e) => {
+    if (!socket || !mySide) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const scaleY = GH / rect.height;
+    myY = (e.clientY - rect.top) * scaleY - 60;
+
+    // Sınırlar
+    if (myY < 0) myY = 0;
+    if (myY > GH - 120) myY = GH - 120;
+
+    // Hareketimizi sunucuya gönder
+    socket.emit('move', { y: myY });
+});
+
+// Dokunmatik kontroller için
+window.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    const scaleY = GH / rect.height;
+    myY = (touch.clientY - rect.top) * scaleY - 60;
+    
+    if (myY < 0) myY = 0;
+    if (myY > GH - 120) myY = GH - 120;
+
+    socket.emit('move', { y: myY });
+}, { passive: false });
+
 function draw() {
+    // Sahayı temizle
     ctx.clearRect(0, 0, GW, GH);
-    ctx.strokeStyle = "rgba(255,255,255,0.3)";
+
+    // Saha Çizgileri
+    ctx.strokeStyle = "rgba(255,255,255,0.4)";
     ctx.lineWidth = 5;
     ctx.strokeRect(0, 0, GW, GH);
     ctx.beginPath(); ctx.moveTo(GW/2, 0); ctx.lineTo(GW/2, GH); ctx.stroke();
     ctx.beginPath(); ctx.arc(GW/2, GH/2, 80, 0, Math.PI*2); ctx.stroke();
-    ctx.fillStyle = p1.color; ctx.fillRect(p1.x, p1.y, paddleW, paddleH);
-    ctx.fillStyle = p2.color; ctx.fillRect(p2.x, p2.y, paddleW, paddleH);
+
+    // Skorları Güncelle
+    document.getElementById("s1").innerText = scores.left;
+    document.getElementById("s2").innerText = scores.right;
+
+    // Oyuncuları Çiz
+    Object.values(players).forEach(p => {
+        ctx.fillStyle = p.side === 'left' ? "#2196F3" : "#f44336";
+        const xPos = p.side === 'left' ? 40 : GW - 60;
+        ctx.fillRect(xPos, p.y, 20, 120);
+        
+        // Kendi raketimizin etrafına beyaz bir çerçeve çizelim ki karışmasın
+        if (p.id === myId) {
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(xPos, p.y, 20, 120);
+        }
+    });
+
+    // Topu Çiz
     ctx.fillStyle = "white";
-    balls.forEach(ball => { ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill(); });
-    update();
-    requestAnimationFrame(draw);
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+    ctx.fill();
 }
-draw();
 </script>
 </body>
 </html>
+
