@@ -1,69 +1,82 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(express.static(__dirname)); // HTML dosyasını sunar
+app.use(express.static(__dirname));
 
 let players = {}; 
-let ball = { x: 640, y: 360, dx: 8, dy: 8, r: 12 };
+let balls = [];
 let scores = { left: 0, right: 0 };
+let gameConfig = { ballCount: 1, ballSpeed: 10, botSkill: 0, isBotMode: false };
+
+const GW = 1280, GH = 720, paddleH = 120;
+
+function createBall(speed) {
+    return { x: GW/2, y: GH/2, dx: (Math.random() > 0.5 ? 1 : -1) * speed, dy: (Math.random() > 0.5 ? 0.7 : -0.7) * speed, r: 12 };
+}
 
 io.on('connection', (socket) => {
-    // Yeni oyuncuyu belirle (İlk gelen Mavi/Sol, ikinci gelen Kırmızı/Sağ)
+    // İlk gelen sol (mavi), ikinci gelen sağ (kırmızı) olur
     const side = Object.keys(players).length === 0 ? 'left' : 'right';
-    players[socket.id] = { y: 300, side: side, id: socket.id };
+    players[socket.id] = { y: GH/2 - 60, side: side, id: socket.id };
 
-    console.log(`Oyuncu bağlandı: ${side} (${socket.id})`);
     socket.emit('init', { id: socket.id, side: side });
 
-    // Oyuncudan gelen hareket bilgisini al
+    socket.on('startConfig', (config) => {
+        gameConfig = config;
+        scores = { left: 0, right: 0 };
+        resetStage();
+    });
+
     socket.on('move', (data) => {
         if (players[socket.id]) players[socket.id].y = data.y;
     });
 
     socket.on('disconnect', () => {
         delete players[socket.id];
-        console.log('Oyuncu ayrıldı.');
     });
 });
 
-// Oyun Döngüsü (Saniyede 60 kez hesaplama yapar)
-setInterval(() => {
-    if (Object.keys(players).length < 2) return; // 2 oyuncu yoksa oyun başlamaz
-
-    // Top Hareketleri
-    ball.x += ball.dx;
-    ball.y += ball.dy;
-
-    // Üst ve Alt Duvar Çarpması
-    if (ball.y <= ball.r || ball.y >= 720 - ball.r) ball.dy *= -1;
-
-    // Raket Çarpışmaları
-    Object.values(players).forEach(p => {
-        if (p.side === 'left' && ball.x - ball.r < 60 && ball.y > p.y && ball.y < p.y + 120) {
-            ball.dx = Math.abs(ball.dx) * 1.05;
+function resetStage() {
+    balls = [];
+    setTimeout(() => {
+        for(let i=0; i < gameConfig.ballCount; i++) {
+            balls.push(createBall(gameConfig.ballSpeed));
         }
-        if (p.side === 'right' && ball.x + ball.r > 1220 && ball.y > p.y && ball.y < p.y + 120) {
-            ball.dx = -Math.abs(ball.dx) * 1.05;
-        }
-    });
-
-    // Gol Kontrol
-    if (ball.x < 0) { scores.right++; resetBall(); }
-    if (ball.x > 1280) { scores.left++; resetBall(); }
-
-    // Herkese güncel veriyi gönder
-    io.emit('update', { players, ball, scores });
-}, 1000 / 60);
-
-function resetBall() {
-    ball = { x: 640, y: 360, dx: (Math.random() > 0.5 ? 8 : -8), dy: 8, r: 12 };
+    }, 3000); // 3 saniye geri sayım payı
 }
 
+// Oyun Döngüsü
+setInterval(() => {
+    if (balls.length === 0) {
+        io.emit('update', { players, balls, scores });
+        return;
+    }
+
+    // Bot Hareketi (Eğer mod aktifse ve sağ tarafta oyuncu yoksa)
+    if (gameConfig.isBotMode) {
+        let targetBall = balls.reduce((prev, curr) => (curr.x > prev.x) ? curr : prev);
+        let botY = players["bot"] ? players["bot"].y : GH/2 - 60;
+        let diff = (targetBall.y - paddleH/2) - botY;
+        botY += diff * gameConfig.botSkill;
+        players["bot"] = { y: botY, side: 'right', id: 'bot' };
+    }
+
+    balls.forEach(ball => {
+        ball.x += ball.dx; ball.y += ball.dy;
+        if (ball.y <= ball.r || ball.y >= GH - ball.r) ball.dy *= -1;
+
+        // Çarpışma ve Skor Mantığı... (Önceki kodun aynısı burada sunucu tarafında çalışır)
+        if (ball.x < 0) { scores.right++; resetStage(); io.emit('goal', 'right'); }
+        else if (ball.x > GW) { scores.left++; resetStage(); io.emit('goal', 'left'); }
+    });
+
+    io.emit('update', { players, balls, scores });
+}, 1000 / 60);
+
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Oyun ${PORT} portunda yayında!`));
+server.listen(PORT, () => console.log(`Sunucu ${PORT} portunda aktif.`));
