@@ -1,69 +1,58 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(express.static(__dirname)); // HTML dosyasını sunar
+app.use(express.static(__dirname));
 
-let players = {}; 
-let ball = { x: 640, y: 360, dx: 8, dy: 8, r: 12 };
-let scores = { left: 0, right: 0 };
+let players = {};
+let gameState = {
+    balls: [{x: 640, y: 360, dx: 10, dy: 7}],
+    p1: {y: 300, name: "Bekleniyor..."},
+    p2: {y: 300, name: "Bekleniyor..."},
+    scores: {p1: 0, p2: 0}
+};
 
 io.on('connection', (socket) => {
-    // Yeni oyuncuyu belirle (İlk gelen Mavi/Sol, ikinci gelen Kırmızı/Sağ)
-    const side = Object.keys(players).length === 0 ? 'left' : 'right';
-    players[socket.id] = { y: 300, side: side, id: socket.id };
+    socket.on('joinGame', (data) => {
+        const side = Object.keys(players).length === 0 ? 'p1' : 'p2';
+        players[socket.id] = { side: side, name: data.name };
+        gameState[side].name = data.name;
 
-    console.log(`Oyuncu bağlandı: ${side} (${socket.id})`);
-    socket.emit('init', { id: socket.id, side: side });
+        socket.emit('init', { id: socket.id, side: side });
+        if(Object.keys(players).length === 2) io.emit('gameStart');
+    });
 
-    // Oyuncudan gelen hareket bilgisini al
     socket.on('move', (data) => {
-        if (players[socket.id]) players[socket.id].y = data.y;
+        if(players[socket.id]) {
+            gameState[players[socket.id].side].y = data.y;
+        }
     });
 
-    socket.on('disconnect', () => {
-        delete players[socket.id];
-        console.log('Oyuncu ayrıldı.');
-    });
+    socket.on('disconnect', () => { delete players[socket.id]; });
 });
 
-// Oyun Döngüsü (Saniyede 60 kez hesaplama yapar)
+// Oyun Döngüsü
 setInterval(() => {
-    if (Object.keys(players).length < 2) return; // 2 oyuncu yoksa oyun başlamaz
-
-    // Top Hareketleri
-    ball.x += ball.dx;
-    ball.y += ball.dy;
-
-    // Üst ve Alt Duvar Çarpması
-    if (ball.y <= ball.r || ball.y >= 720 - ball.r) ball.dy *= -1;
-
-    // Raket Çarpışmaları
-    Object.values(players).forEach(p => {
-        if (p.side === 'left' && ball.x - ball.r < 60 && ball.y > p.y && ball.y < p.y + 120) {
-            ball.dx = Math.abs(ball.dx) * 1.05;
-        }
-        if (p.side === 'right' && ball.x + ball.r > 1220 && ball.y > p.y && ball.y < p.y + 120) {
-            ball.dx = -Math.abs(ball.dx) * 1.05;
-        }
+    if(Object.keys(players).length < 2) return;
+    
+    // Top fiziği ve çarpışma hesaplamaları buraya gelir...
+    gameState.balls.forEach(b => {
+        b.x += b.dx; b.y += b.dy;
+        if(b.y <= 0 || b.y >= 720) b.dy *= -1;
+        // Raket çarpışmaları...
     });
 
-    // Gol Kontrol
-    if (ball.x < 0) { scores.right++; resetBall(); }
-    if (ball.x > 1280) { scores.left++; resetBall(); }
+    io.emit('update', { 
+        balls: gameState.balls, 
+        p1: {y: gameState.p1.y}, 
+        p2: {y: gameState.p2.y},
+        scores: gameState.scores,
+        names: {p1: gameState.p1.name, p2: gameState.p2.name}
+    });
+}, 1000/60);
 
-    // Herkese güncel veriyi gönder
-    io.emit('update', { players, ball, scores });
-}, 1000 / 60);
-
-function resetBall() {
-    ball = { x: 640, y: 360, dx: (Math.random() > 0.5 ? 8 : -8), dy: 8, r: 12 };
-}
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Oyun ${PORT} portunda yayında!`));
+server.listen(process.env.PORT || 3000);
