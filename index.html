@@ -3,86 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Football Legendary - Chat Edition</title>
+    <title>Football Legendary - Vertical Pro</title>
     <style>
         :root { --p1-color: #2196F3; --p2-color: #f44336; }
-        body { margin: 0; padding: 0; overflow: hidden; background: #121212; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; touch-action: none; flex-direction: column; }
+        body { margin: 0; padding: 0; overflow: hidden; background: #121212; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: flex-start; height: 100vh; touch-action: none; flex-direction: column; }
         
-        #game-container { position: relative; width: 95vw; height: 53.43vw; max-height: 70vh; max-width: 124.44vh; background: #2e7d32; border: 4px solid white; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        /* DİKEY SAHA YAPISI */
+        #game-container { 
+            position: relative; 
+            width: 92vw; 
+            height: 125vw; 
+            max-height: 55vh; 
+            margin-top: 15px; 
+            background: #2e7d32; 
+            border: 4px solid white; 
+            border-radius: 12px; 
+            overflow: hidden; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+        }
         canvas { width: 100%; height: 100%; display: block; position: absolute; top:0; left:0; }
         #fx-canvas { z-index: 110; pointer-events: none; }
         
         .menu-layer { position: absolute; inset: 0; background: rgba(0,0,0,0.92); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 50; color: white; text-align: center; padding: 20px; }
-        h1 { font-size: 5vw; margin-bottom: 10px; }
-        .btn { padding: 12px 25px; font-size: 1.5vw; cursor: pointer; border: none; color: white; border-radius: 50px; font-weight: bold; margin: 5px; width: 40%; min-width: 200px; transition: 0.2s; }
+        h1 { font-size: 8vw; margin-bottom: 15px; }
+        
+        .btn { padding: 16px 20px; font-size: 4.5vw; cursor: pointer; border: none; color: white; border-radius: 50px; font-weight: bold; margin: 8px; width: 85%; transition: 0.2s; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
         .btn-blue { background: #2196F3; }
         .btn-orange { background: #ff9800; }
         .btn-purple { background: #9c27b0; }
         .btn-green { background: #4CAF50; }
         .btn-gray { background: #555; }
         .btn-red { background: #f44336; }
-        
-        #name-input { padding: 10px; border-radius: 8px; border: none; font-size: 1.5vw; margin-bottom: 15px; width: 250px; text-align: center; }
-        #countdown-el { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 10vw; font-weight: bold; color: #ffeb3b; z-index: 120; display: none; text-shadow: 4px 4px 0 #000; }
-        
-        #history-list { width: 80%; max-height: 50%; overflow-y: auto; background: rgba(255,255,255,0.1); border-radius: 10px; padding: 10px; margin-bottom: 15px; text-align: left; }
-        .history-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.2); font-size: 1.2vw; }
-        .win { color: #4CAF50; font-weight: bold; }
-        .loss { color: #f44336; font-weight: bold; }
 
-        #controls-wrapper { width: 80%; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 15px; margin-top: 15px; z-index: 40; }
-        .ctrl-btn { flex: 1; height: 70px; background: #2196F3; border: none; border-radius: 15px; display: flex; align-items: center; justify-content: center; color: white; font-size: 2vw; font-weight: bold; user-select: none; visibility: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.4); }
-        #pause-btn { flex: 0.4; height: 70px; background: rgba(255,255,255,0.1); border: 2px solid white; color: white; border-radius: 15px; cursor: pointer; display: none; align-items: center; justify-content: center; font-size: 25px; }
+        #name-input { padding: 12px; border-radius: 10px; border: none; font-size: 5vw; margin-bottom: 15px; width: 80%; text-align: center; }
+        #countdown-el { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 25vw; font-weight: bold; color: #ffeb3b; z-index: 120; display: none; text-shadow: 5px 5px 0 #000; }
 
-        /* CANLI SOHBET STİLİ */
-        #chat-container { 
-            position: absolute; 
-            bottom: 10px; 
-            left: 50%; 
-            transform: translateX(-50%); 
-            width: 300px; 
-            background: rgba(0,0,0,0.6); 
-            border-radius: 10px; 
-            display: none; 
-            flex-direction: column; 
-            z-index: 120; 
-            padding: 5px;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-        #chat-messages { 
-            height: 100px; 
-            overflow-y: auto; 
-            color: white; 
-            font-size: 12px; 
-            text-align: left; 
-            margin-bottom: 5px;
-            padding: 2px;
-        }
+        /* MAÇ GEÇMİŞİ LİSTESİ */
+        #history-list { width: 90%; max-height: 40%; overflow-y: auto; background: rgba(255,255,255,0.1); border-radius: 10px; padding: 10px; margin-bottom: 10px; text-align: left; }
+        .history-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 3.5vw; }
+
+        /* CANLI SOHBET (DİKEYE UYGUN) */
+        #chat-container { position: fixed; bottom: 140px; left: 50%; transform: translateX(-50%); width: 85%; background: rgba(0,0,0,0.7); border-radius: 10px; display: none; flex-direction: column; z-index: 100; padding: 8px; border: 1px solid rgba(255,255,255,0.2); }
+        #chat-messages { height: 80px; overflow-y: auto; color: white; font-size: 3.2vw; text-align: left; margin-bottom: 5px; }
         #chat-input-wrapper { display: flex; gap: 5px; }
-        #chat-input { flex: 1; background: rgba(255,255,255,0.2); border: none; border-radius: 5px; color: white; padding: 5px; font-size: 12px; }
-        #chat-send { background: #2196F3; border: none; border-radius: 5px; color: white; padding: 5px 10px; cursor: pointer; font-size: 12px; }
+        #chat-input { flex: 1; background: rgba(255,255,255,0.2); border: none; border-radius: 5px; color: white; padding: 8px; font-size: 3.5vw; }
+        #chat-send { background: #2196F3; border: none; border-radius: 5px; color: white; padding: 5px 12px; font-size: 3.5vw; }
+
+        /* DİKEY MOBİL KONTROLLER: SOLA | ⏸ | SAĞA */
+        #controls-wrapper { width: 92%; display: flex; flex-direction: row; justify-content: space-between; align-items: center; gap: 10px; margin-top: auto; margin-bottom: 35px; z-index: 40; }
+        .ctrl-btn { flex: 1.5; height: 85px; background: #2196F3; border: none; border-radius: 20px; display: flex; align-items: center; justify-content: center; color: white; font-size: 5.5vw; font-weight: bold; user-select: none; visibility: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.5); }
+        #pause-btn { flex: 0.8; height: 85px; background: rgba(255,255,255,0.1); border: 2px solid white; color: white; border-radius: 20px; display: none; align-items: center; justify-content: center; font-size: 25px; }
+        .ctrl-btn:active, #pause-btn:active { transform: scale(0.95); opacity: 0.8; }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <div id="ui" style="position:absolute; top:10px; width:100%; text-align:center; color:white; font-weight:bold; z-index:20; font-size:2vw;">
+    <div id="ui" style="position:absolute; top:10px; width:100%; text-align:center; color:white; font-weight:bold; z-index:20; font-size:4.5vw;">
         <span id="name1">OYUNCU</span>: <span id="s1">0</span> | <span id="name2">RAKİP</span>: <span id="s2">0</span>
     </div>
     <div id="countdown-el">2</div>
-
-    <div id="chat-container">
-        <div id="chat-messages"></div>
-        <div id="chat-input-wrapper">
-            <input type="text" id="chat-input" placeholder="Mesaj yaz..." maxlength="50">
-            <button id="chat-send" onclick="sendMessage()">Gönder</button>
-        </div>
-    </div>
     
     <div id="main-menu" class="menu-layer">
         <h1>FUTBOL 1V1</h1>
         <input type="text" id="name-input" placeholder="Adını Yaz..." maxlength="10">
-        <button class="btn btn-purple" onclick="startTournamentMode()">🏆 TURNUVA MODU</button>
+        <button class="btn btn-purple" onclick="showTournamentMenu()">🏆 TURNUVA MODU</button>
         <button class="btn btn-blue" onclick="startOnlineMode()">🌐 ONLINE OYNA (PvP)</button>
         <button class="btn btn-orange" onclick="showDifficultyMenu()">🤖 BOTA KARŞI MAÇ</button>
         <button class="btn btn-gray" onclick="showHistoryMenu()">📜 MAÇ GEÇMİŞİ</button>
@@ -98,50 +83,53 @@
     <div id="pause-menu" class="menu-layer" style="display: none;">
         <h1>OYUN DURDU</h1>
         <button class="btn btn-green" onclick="togglePause()">DEVAM ET</button>
-        <button class="btn btn-red" onclick="location.reload()">ANA MENÜYE DÖN</button>
+        <button class="btn btn-red" onclick="location.reload()">ANA MENÜ</button>
     </div>
 
     <div id="difficulty-menu" class="menu-layer" style="display: none;">
         <h1>ZORLUK SEÇ</h1>
-        <button class="btn btn-green" onclick="startBotMode(0.06, 12, 10, 1, 'KOLAY')">KOLAY</button>
-        <button class="btn btn-blue" onclick="startBotMode(0.12, 16, 22, 1, 'ORTA')">ORTA (HIZLI)</button>
-        <button class="btn btn-red" onclick="startBotMode(0.25, 20, 14, 2, 'ZOR')">ZOR (2 TOP)</button>
-        <button class="btn btn-gray" onclick="backToMain()">⬅ GERİ</button>
+        <button class="btn btn-green" onclick="startBotMode(0.06, 12, 12, 1, 'KOLAY')">KOLAY</button>
+        <button class="btn btn-blue" onclick="startBotMode(0.12, 16, 22, 1, 'ORTA')">ORTA</button>
+        <button class="btn btn-red" onclick="startBotMode(0.25, 20, 15, 2, 'ZOR')">ZOR (2 TOP)</button>
+        <button class="btn btn-gray" onclick="backToMain()">GERİ</button>
     </div>
 
     <div id="tournament-menu" class="menu-layer" style="display: none;">
         <h1>TURNUVA</h1>
         <button class="btn btn-orange" onclick="prepareBotTournament()">🤖 BOT TURNUVASI</button>
-        <button class="btn btn-blue" onclick="alert('Online Turnuva Yakında!')">🌐 ONLINE TURNUVA</button>
-        <button class="btn btn-gray" onclick="backToMain()">⬅ GERİ</button>
+        <button class="btn btn-blue" onclick="alert('Yakında!')">🌐 ONLINE TURNUVA</button>
+        <button class="btn btn-gray" onclick="backToMain()">GERİ</button>
     </div>
 
     <div id="bracket-layer" class="menu-layer" style="display: none;">
         <h1 id="round-title">ÇEYREK FİNAL</h1>
-        <div style="border: 2px solid #ff9800; padding: 15px; border-radius: 15px; margin-bottom: 15px;">
+        <div style="border: 2px solid #ff9800; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
             <h2 id="match-info">Sen vs Bot 1</h2>
         </div>
-        <button class="btn btn-green" onclick="startTournamentMatch()">MAÇA BAŞLA</button>
-    </div>
-
-    <div id="waiting-layer" class="menu-layer" style="display: none;">
-        <h1>RAKİP BEKLENİYOR...</h1>
-        <button class="btn btn-gray" onclick="location.reload()">İPTAL</button>
+        <button class="btn btn-green" onclick="startTournamentMatch()">BAŞLA</button>
     </div>
 
     <div id="end-menu" class="menu-layer" style="display: none;">
         <h1 id="winner-text">KAZANDI!</h1>
-        <button class="btn btn-green" id="next-btn" onclick="location.reload()">TEKRAR OYNA</button>
+        <button class="btn btn-green" id="next-btn" onclick="location.reload()">TEKRAR</button>
     </div>
 
     <canvas id="game"></canvas>
     <canvas id="fx-canvas"></canvas>
 </div>
 
+<div id="chat-container">
+    <div id="chat-messages"></div>
+    <div id="chat-input-wrapper">
+        <input type="text" id="chat-input" placeholder="Mesaj..." maxlength="50">
+        <button id="chat-send" onclick="sendMessage()">Gönder</button>
+    </div>
+</div>
+
 <div id="controls-wrapper">
-    <div class="ctrl-btn" id="p1-up">YUKARI</div>
+    <div class="ctrl-btn" id="p1-left">SOLA</div>
     <button id="pause-btn" onclick="togglePause()">⏸</button>
-    <div class="ctrl-btn" id="p1-down">AŞAĞI</div>
+    <div class="ctrl-btn" id="p1-right">SAĞA</div>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
@@ -150,233 +138,99 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 const fxCanvas = document.getElementById("fx-canvas");
 const fxCtx = fxCanvas.getContext("2d");
-const GW = 1280, GH = 720;
+const GW = 1000, GH = 1400; // Dikey Koordinatlar
 canvas.width = fxCanvas.width = GW;
 canvas.height = fxCanvas.height = GH;
 
-const ballImg = new Image();
-ballImg.src = 'balon.png';
-
+const ballImg = new Image(); ballImg.src = 'balon.png';
 const sounds = { gol: new Audio('gol.mp3'), mavi: new Audio('mavi.mp3'), kirmizi: new Audio('kirmizi.mp3') };
 
-function unlockSounds() {
-    Object.values(sounds).forEach(s => { s.load(); s.play().then(() => { s.pause(); s.currentTime = 0; }).catch(e => {}); });
-}
+function unlockSounds() { Object.values(sounds).forEach(s => { s.load(); s.play().then(() => { s.pause(); s.currentTime = 0; }).catch(e => {}); }); }
 
 let score1 = 0, score2 = 0, socket, playerName = "Oyuncu";
-let p1 = { x: 40, y: 300, w: 20, h: 120, dy: 0 };
-let p2 = { x: GW - 60, y: 300, w: 20, h: 120 };
+let p1 = { x: 400, y: GH - 150, w: 220, h: 35, dx: 0 }; // Alt Raket
+let p2 = { x: 400, y: 120, w: 220, h: 35 };            // Üst Raket
 let balls = [], gameActive = false, isTournament = false, isOnline = false, isPaused = false, isCountingDown = false, currentRound = 1;
 let currentBotParams = { skill: 0.1, speed: 10, bSpeed: 14, bCount: 1, modeName: 'BOTA KARŞI' };
 let particles = [];
 
-function createFirework(x, y) {
-    const color = `hsl(${Math.random() * 360}, 100%, 50%)`;
-    for (let i = 0; i < 40; i++) {
-        particles.push({ x: x, y: y, dx: (Math.random() - 0.5) * 15, dy: (Math.random() - 0.5) * 15, r: Math.random() * 4 + 2, color: color, alpha: 1 });
-    }
-}
+// FX ve Sosyal
+function createFirework(x, y) { const color = `hsl(${Math.random() * 360}, 100%, 50%)`; for (let i = 0; i < 40; i++) { particles.push({ x, y, dx: (Math.random() - 0.5) * 15, dy: (Math.random() - 0.5) * 15, r: Math.random() * 5 + 2, color, alpha: 1 }); } }
+function updateParticles() { fxCtx.clearRect(0, 0, GW, GH); for (let i = particles.length - 1; i >= 0; i--) { let p = particles[i]; p.x += p.dx; p.y += p.dy; p.dy += 0.1; p.alpha -= 0.015; if (p.alpha <= 0) particles.splice(i, 1); else { fxCtx.globalAlpha = p.alpha; fxCtx.fillStyle = p.color; fxCtx.beginPath(); fxCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2); fxCtx.fill(); } } }
+function sendMessage() { const input = document.getElementById("chat-input"); const msg = input.value.trim(); if (msg && isOnline && socket) { socket.emit('chatMessage', { name: playerName, text: msg }); input.value = ""; } }
+function addChatMessage(data) { const container = document.getElementById("chat-messages"); const msgDiv = document.createElement("div"); msgDiv.innerHTML = `<b>${data.name}:</b> ${data.text}`; container.appendChild(msgDiv); container.scrollTop = container.scrollHeight; }
 
-function updateParticles() {
-    fxCtx.clearRect(0, 0, GW, GH);
-    for (let i = particles.length - 1; i >= 0; i--) {
-        let p = particles[i];
-        p.x += p.dx; p.y += p.dy; p.dy += 0.1; p.alpha -= 0.015;
-        if (p.alpha <= 0) particles.splice(i, 1);
-        else { fxCtx.globalAlpha = p.alpha; fxCtx.fillStyle = p.color; fxCtx.beginPath(); fxCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2); fxCtx.fill(); }
-    }
-}
-
+// Menü ve Tarihçe
 function hideAll() { document.querySelectorAll('.menu-layer').forEach(l => l.style.display = "none"); }
 function showDifficultyMenu() { hideAll(); document.getElementById("difficulty-menu").style.display = "flex"; }
 function showTournamentMenu() { hideAll(); document.getElementById("tournament-menu").style.display = "flex"; }
 function backToMain() { hideAll(); document.getElementById("main-menu").style.display = "flex"; }
+function showHistoryMenu() { hideAll(); const list = document.getElementById("history-list"); const history = JSON.parse(localStorage.getItem("matchHistory") || "[]"); list.innerHTML = history.length ? "" : "<p>Yok.</p>"; history.reverse().forEach(m => { const item = document.createElement("div"); item.className = "history-item"; item.innerHTML = `<span>${m.date}</span> <span class="${m.result === 'KAZANDI' ? 'win' : 'loss'}">${m.score}</span>`; list.appendChild(item); }); document.getElementById("history-menu").style.display = "flex"; }
+function saveMatch(res) { const history = JSON.parse(localStorage.getItem("matchHistory") || "[]"); history.push({ date: new Date().toLocaleDateString(), mode: isTournament ? "TUR" : "BOT", score: `${score1}-${score2}`, result: res }); if(history.length > 15) history.shift(); localStorage.setItem("matchHistory", JSON.stringify(history)); }
 
-function showHistoryMenu() {
-    hideAll();
-    const list = document.getElementById("history-list");
-    const history = JSON.parse(localStorage.getItem("matchHistory") || "[]");
-    list.innerHTML = history.length ? "" : "<p style='text-align:center'>Henüz maç yapılmadı.</p>";
-    history.reverse().forEach(match => {
-        const item = document.createElement("div");
-        item.className = "history-item";
-        item.innerHTML = `<span>${match.date} - ${match.mode}</span> <span class="${match.result === 'KAZANDI' ? 'win' : 'loss'}">${match.score} ${match.result}</span>`;
-        list.appendChild(item);
-    });
-    document.getElementById("history-menu").style.display = "flex";
-}
-
-function saveMatch(result) {
-    const history = JSON.parse(localStorage.getItem("matchHistory") || "[]");
-    const newMatch = {
-        date: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-        mode: isTournament ? `TURNUVA (R${currentRound})` : currentBotParams.modeName,
-        score: `${score1}-${score2}`,
-        result: result
-    };
-    history.push(newMatch);
-    if(history.length > 20) history.shift();
-    localStorage.setItem("matchHistory", JSON.stringify(history));
-}
-
-function clearHistory() { localStorage.removeItem("matchHistory"); showHistoryMenu(); }
-
-function togglePause() {
-    if(!gameActive || isCountingDown) return;
-    isPaused = !isPaused;
-    document.getElementById("pause-menu").style.display = isPaused ? "flex" : "none";
-}
-
-// --- SOHBET FONKSİYONLARI ---
-function sendMessage() {
-    const input = document.getElementById("chat-input");
-    const msg = input.value.trim();
-    if (msg && isOnline && socket) {
-        socket.emit('chatMessage', { name: playerName, text: msg });
-        input.value = "";
-    }
-}
-
-function addChatMessage(data) {
-    const container = document.getElementById("chat-messages");
-    const msgDiv = document.createElement("div");
-    msgDiv.innerHTML = `<b>${data.name}:</b> ${data.text}`;
-    container.appendChild(msgDiv);
-    container.scrollTop = container.scrollHeight;
-}
-
-// Enter tuşuyla mesaj gönderme
-document.getElementById("chat-input").addEventListener("keypress", (e) => {
-    if (e.key === "Enter") sendMessage();
-});
+function togglePause() { if(!gameActive || isCountingDown) return; isPaused = !isPaused; document.getElementById("pause-menu").style.display = isPaused ? "flex" : "none"; }
 
 function startBotMode(skill, speed, bSpeed, bCount, modeName) {
-    unlockSounds(); hideAll();
-    isOnline = false; isTournament = false; isPaused = false;
+    unlockSounds(); hideAll(); isOnline = false; isTournament = false; isPaused = false;
     document.getElementById("chat-container").style.display = "none";
     score1 = 0; score2 = 0; updateScoreUI();
     currentBotParams = { skill, speed, bSpeed, bCount, modeName };
-    gameActive = true;
-    document.getElementById("pause-btn").style.display = "flex";
-    showControls(true);
-    resetBallAfterGoal();
-}
-
-function startOnlineMode() {
-    unlockSounds(); hideAll();
-    playerName = document.getElementById("name-input").value.trim() || "Oyuncu";
-    document.getElementById("waiting-layer").style.display = "flex";
-    isOnline = true; isPaused = false;
-    
-    socket = io();
-    socket.emit('joinGame', { name: playerName });
-    
-    socket.on('gameStart', () => { 
-        hideAll(); 
-        gameActive = true; 
-        showControls(true); 
-        document.getElementById("pause-btn").style.display = "flex";
-        document.getElementById("chat-container").style.display = "flex"; // Sohbeti aç
-    });
-    
-    socket.on('chatMessage', (data) => {
-        addChatMessage(data);
-    });
-
-    socket.on('update', (data) => {
-        if(!isOnline || isPaused) return;
-        balls = data.balls; 
-        score1 = data.scores.p1; 
-        score2 = data.scores.p2; 
-        updateScoreUI();
-        if(score1 >= 3 || score2 >= 3) checkGameOver();
-    });
+    gameActive = true; document.getElementById("pause-btn").style.display = "flex";
+    showControls(true); resetBallAfterGoal();
 }
 
 function resetBallAfterGoal() {
-    if(!gameActive) return;
-    isCountingDown = true; balls = [];
-    const countdownEl = document.getElementById("countdown-el");
-    countdownEl.style.display = "block";
-    let timer = 2; countdownEl.innerText = timer;
-    let interval = setInterval(() => {
-        timer--;
-        if (timer > 0) { countdownEl.innerText = timer; } else {
-            clearInterval(interval); countdownEl.style.display = "none"; isCountingDown = false;
-            for(let i=0; i < (currentBotParams.bCount || 1); i++) {
-                balls.push({ x: GW/2, y: GH/2, dx: (Math.random() > 0.5 ? currentBotParams.bSpeed : -currentBotParams.bSpeed), dy: (Math.random()-0.5)*10, r: 25 });
-            }
+    if(!gameActive) return; isCountingDown = true; balls = [];
+    const cd = document.getElementById("countdown-el"); cd.style.display = "block";
+    let timer = 2; cd.innerText = timer;
+    let inv = setInterval(() => {
+        timer--; if (timer > 0) cd.innerText = timer; else {
+            clearInterval(inv); cd.style.display = "none"; isCountingDown = false;
+            for(let i=0; i < currentBotParams.bCount; i++) balls.push({ x: GW/2, y: GH/2, dx: (Math.random()-0.5)*20, dy: (Math.random()>0.5?1:-1)*currentBotParams.bSpeed });
         }
     }, 1000);
 }
 
 function updateScoreUI() { document.getElementById("s1").innerText = score1; document.getElementById("s2").innerText = score2; }
-function showControls(show) { const v = show ? "visible" : "hidden"; document.getElementById("p1-up").style.visibility = v; document.getElementById("p1-down").style.visibility = v; }
+function showControls(s) { const v = s ? "visible" : "hidden"; document.getElementById("p1-left").style.visibility = v; document.getElementById("p1-right").style.visibility = v; }
 
 function checkGameOver() {
-    if(!gameActive) return;
-    gameActive = false;
-    document.getElementById("pause-btn").style.display = "none";
-    document.getElementById("chat-container").style.display = "none";
-    document.getElementById("end-menu").style.display = "flex";
-    const winText = document.getElementById("winner-text");
-    const nextBtn = document.getElementById("next-btn");
-    
-    if (score1 >= 3) {
-        winText.innerText = "MAÇI KAZANDIN!";
-        sounds.mavi.play();
-        if(!isOnline) saveMatch("KAZANDI");
-        let fireworkTimer = setInterval(() => { if(particles.length > 800) return; createFirework(Math.random() * GW, Math.random() * GH); }, 120);
-        setTimeout(() => clearInterval(fireworkTimer), 3500);
-        if (isTournament && currentRound < 3) {
-            nextBtn.innerText = "SONRAKİ TUR";
-            nextBtn.onclick = () => { document.getElementById("end-menu").style.display = "none"; currentRound++; showBracket(); };
-        } else if (isTournament && currentRound >= 3) { winText.innerText = "🏆 ŞAMPİYONSUN!"; }
-    } else { 
-        winText.innerText = "ELENDİN!"; 
-        sounds.kirmizi.play();
-        if(!isOnline) saveMatch("KAYBETTİ");
-    }
+    if(!gameActive) return; gameActive = false; document.getElementById("pause-btn").style.display = "none"; document.getElementById("chat-container").style.display = "none";
+    document.getElementById("end-menu").style.display = "flex"; const winText = document.getElementById("winner-text");
+    if (score1 >= 3) { winText.innerText = "KAZANDIN!"; sounds.mavi.play(); saveMatch("KAZANDI"); let ft = setInterval(() => { if(particles.length > 500) return; createFirework(Math.random()*GW, Math.random()*GH); }, 150); setTimeout(() => clearInterval(ft), 3000); }
+    else { winText.innerText = "ELENDİN!"; sounds.kirmizi.play(); saveMatch("KAYBETTİ"); }
 }
 
-const setupCtrl = (id, val) => {
-    const b = document.getElementById(id);
-    b.ontouchstart = b.onmousedown = (e) => { e.preventDefault(); if(gameActive && !isPaused && !isCountingDown) p1.dy = val; };
-    b.ontouchend = b.onmouseup = (e) => { e.preventDefault(); p1.dy = 0; };
-};
-setupCtrl("p1-up", -18); setupCtrl("p1-down", 18);
+const setupCtrl = (id, val) => { const b = document.getElementById(id); b.ontouchstart = b.onmousedown = (e) => { e.preventDefault(); if(gameActive && !isPaused && !isCountingDown) p1.dx = val; }; b.ontouchend = b.onmouseup = (e) => { e.preventDefault(); p1.dx = 0; }; };
+setupCtrl("p1-left", -25); setupCtrl("p1-right", 25);
 
 function loop() {
     if (gameActive && !isOnline && !isPaused && !isCountingDown) {
         ctx.clearRect(0, 0, GW, GH);
-        ctx.strokeStyle = "rgba(255,255,255,0.3)"; ctx.lineWidth = 6;
-        ctx.beginPath(); ctx.moveTo(GW/2, 0); ctx.lineTo(GW/2, GH); ctx.stroke();
-        p1.y += p1.dy;
-        if(p1.y < 0) p1.y = 0; if(p1.y > GH-p1.h) p1.y = GH-p1.h;
-        if(balls.length > 0) p2.y += (balls[0].y - (p2.y + p2.h/2)) * currentBotParams.skill;
-        if(p2.y < 0) p2.y = 0; if(p2.y > GH-p2.h) p2.y = GH-p2.h;
+        ctx.strokeStyle = "rgba(255,255,255,0.2)"; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(0, GH/2); ctx.lineTo(GW, GH/2); ctx.stroke();
+        p1.x += p1.dx; if(p1.x < 0) p1.x = 0; if(p1.x > GW-p1.w) p1.x = GW-p1.w;
+        if(balls.length > 0) p2.x += (balls[0].x - (p2.x + p2.w/2)) * currentBotParams.skill;
+        if(p2.x < 0) p2.x = 0; if(p2.x > GW-p2.w) p2.x = GW-p2.w;
         ctx.fillStyle = "#2196F3"; ctx.fillRect(p1.x, p1.y, p1.w, p1.h);
         ctx.fillStyle = "#f44336"; ctx.fillRect(p2.x, p2.y, p2.w, p2.h);
         balls.forEach(b => {
             b.x += b.dx; b.y += b.dy;
-            if(b.y < 25 || b.y > GH-25) b.dy *= -1;
-            if(b.x < p1.x + p1.w && b.y > p1.y && b.y < p1.y + p1.h) b.dx = Math.abs(b.dx) * 1.05;
-            if(b.x > p2.x - 25 && b.y > p2.y && b.y < p2.y + p2.h) b.dx = -Math.abs(b.dx) * 1.05;
-            if(b.x < 0) { score2++; if(score2 < 3) { sounds.gol.play(); resetBallAfterGoal(); } updateScoreUI(); if(score2 >= 3) checkGameOver(); }
-            if(b.x > GW) { score1++; if(score1 < 3) { sounds.gol.play(); resetBallAfterGoal(); } updateScoreUI(); if(score1 >= 3) checkGameOver(); }
-            if (ballImg.complete) { ctx.drawImage(ballImg, b.x - 25, b.y - 25, 50, 50); }
-            else { ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(b.x, b.y, 12, 0, Math.PI * 2); ctx.fill(); }
+            if(b.x < 25 || b.x > GW-25) b.dx *= -1;
+            if(b.y > p1.y - 25 && b.x > p1.x && b.x < p1.x+p1.w) b.dy = -Math.abs(b.dy)*1.05;
+            if(b.y < p2.y + p2.h + 25 && b.x > p2.x && b.x < p2.x+p2.w) b.dy = Math.abs(b.dy)*1.05;
+            if(b.y < 0) { score1++; if(score1<3){sounds.gol.play(); resetBallAfterGoal();} updateScoreUI(); if(score1>=3) checkGameOver(); }
+            if(b.y > GH) { score2++; if(score2<3){sounds.gol.play(); resetBallAfterGoal();} updateScoreUI(); if(score2>=3) checkGameOver(); }
+            if (ballImg.complete) ctx.drawImage(ballImg, b.x-35, b.y-35, 70, 70); else { ctx.fillStyle="white"; ctx.beginPath(); ctx.arc(b.x,b.y,20,0,Math.PI*2); ctx.fill(); }
         });
     }
-    updateParticles();
-    requestAnimationFrame(loop);
+    updateParticles(); requestAnimationFrame(loop);
 }
 loop();
-
-function startTournamentMode() { unlockSounds(); showTournamentMenu(); }
+function showTournamentMenu() { hideAll(); document.getElementById("tournament-menu").style.display = "flex"; }
 function prepareBotTournament() { isTournament = true; currentRound = 1; showBracket(); }
-function showBracket() { hideAll(); const rounds = ["", "ÇEYREK FİNAL", "YARI FİNAL", "BÜYÜK FİNAL"]; document.getElementById("round-title").innerText = rounds[currentRound]; document.getElementById("match-info").innerText = "Sen vs Bot Lvl " + currentRound; document.getElementById("bracket-layer").style.display = "flex"; }
-function startTournamentMatch() { hideAll(); let skill = 0.06 + (currentRound * 0.08); let speed = 9 + (currentRound * 3); startBotMode(skill, speed, 13 + currentRound, 1, `TURNUVA Tur ${currentRound}`); }
+function showBracket() { hideAll(); const rounds = ["", "ÇEYREK", "YARI", "FİNAL"]; document.getElementById("round-title").innerText = rounds[currentRound]; document.getElementById("bracket-layer").style.display = "flex"; }
+function startTournamentMatch() { hideAll(); let s = 0.06+(currentRound*0.08); startBotMode(s, 10, 14+currentRound, 1, "TURNUVA"); }
+function startOnlineMode() { unlockSounds(); hideAll(); document.getElementById("waiting-layer").style.display = "flex"; isOnline = true; }
 </script>
 </body>
 </html>
