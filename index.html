@@ -7,216 +7,188 @@
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root { --p1-color: #00d2ff; --p2-color: #ff416c; --field-green: #1a472a; --gold: #ffd700; }
-        body { margin: 0; padding: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; height: 100vh; touch-action: none; }
+        body { margin: 0; padding: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; height: 100vh; touch-action: none; }
 
-        #scoreboard { width: 100%; height: 60px; background: #111; display: flex; justify-content: space-around; align-items: center; border-bottom: 2px solid #333; z-index: 100; }
-        .score-val { font-size: 1.8rem; font-weight: 900; color: white; }
-        #match-tag { background: var(--gold); color: #000; padding: 2px 8px; font-size: 0.7rem; font-weight: bold; border-radius: 4px; }
+        #scoreboard { width: 100%; height: 50px; background: #111; display: flex; justify-content: space-around; align-items: center; border-bottom: 2px solid #333; }
+        .score-val { font-size: 1.5rem; font-weight: 900; }
 
-        #game-container { position: relative; width: 100vw; flex-grow: 1; background: var(--field-green); border-top: 2px solid #333; overflow: hidden; }
+        #game-container { position: relative; flex-grow: 1; background: var(--field-green); overflow: hidden; width: 100%; }
         canvas { width: 100%; height: 100%; display: block; }
 
-        .menu-layer { position: absolute; inset: 0; background: rgba(0,0,0,0.96); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; color: white; text-align: center; padding: 20px; }
-        .btn-group { display: flex; flex-direction: column; gap: 10px; width: 280px; }
-        .btn { padding: 14px; font-size: 0.85rem; cursor: pointer; border: none; color: white; border-radius: 8px; font-weight: bold; text-transform: uppercase; }
-        .btn-blue { background: #1565c0; }
+        .menu-layer { position: absolute; inset: 0; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; color: white; padding: 20px; }
+        .btn { padding: 12px 25px; margin: 5px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        .btn-blue { background: #1565c0; color: white; }
+        .btn-green { background: #2e7d32; color: white; }
         .btn-gold { background: var(--gold); color: #000; }
-        .btn-green { background: #2e7d32; }
 
-        input { width: 100%; padding: 12px; border-radius: 5px; border: 1px solid var(--gold); background: #222; color: white; text-align: center; margin-bottom: 10px; box-sizing: border-box; }
+        input { padding: 10px; border-radius: 5px; border: 1px solid #444; background: #222; color: white; margin: 5px; width: 200px; text-align: center; }
 
-        /* MERKEZİ SOHBET */
-        #chat-area { width: 100%; max-width: 300px; height: 180px; background: rgba(0,0,0,0.7); border: 2px solid #444; border-radius: 8px; margin-top: 15px; display: flex; flex-direction: column; }
-        #chat-msgs { flex-grow: 1; overflow-y: auto; padding: 8px; font-size: 0.75rem; text-align: left; background: #000; }
-        .chat-input-row { display: flex; border-top: 2px solid #444; }
-        #chat-input { flex-grow: 1; background: transparent; border: none; color: white; padding: 10px; margin-bottom: 0; text-align: left; }
-
-        #countdown { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--gold); font-size: 100px; font-weight: 900; display: none; z-index: 150; }
-
-        .ctrl-row { width: 100%; height: 90px; display: none; justify-content: space-around; align-items: center; background: #000; padding: 10px; box-sizing: border-box; }
-        .ctrl-btn { width: 45%; height: 70px; background: #222; border: 1px solid #444; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; }
+        /* ALT PANEL: KONTROLLER VE SOHBET */
+        #bottom-panel { height: 180px; background: #111; display: none; flex-direction: row; border-top: 2px solid #333; padding: 10px; gap: 10px; }
+        #controls { flex: 1; display: flex; flex-direction: column; gap: 10px; justify-content: center; }
+        .ctrl-btn { height: 60px; background: #333; color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; -webkit-user-select: none; }
         
-        .beka-footer { color: #444; font-size: 0.6rem; font-weight: bold; letter-spacing: 2px; margin: 5px 0; }
+        #chat-section { flex: 1.5; display: flex; flex-direction: column; background: #000; border-radius: 8px; border: 1px solid #444; overflow: hidden; }
+        #chat-msgs { flex-grow: 1; overflow-y: auto; padding: 5px; font-size: 0.8rem; color: #ccc; }
+        #chat-input { width: 100%; border: none; padding: 8px; background: #222; color: white; box-sizing: border-box; }
+
+        #countdown { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--gold); font-size: 80px; font-weight: 900; display: none; z-index: 150; }
+        #ready-screen { position: absolute; inset: 0; background: rgba(0,0,0,0.8); z-index: 180; display: none; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
 <div id="scoreboard">
     <div class="score-val" id="s2-val" style="color:var(--p2-color)">0</div>
-    <div id="match-tag">HAZIR</div>
+    <div id="status-text" style="color:var(--gold); font-size: 0.8rem;">BAĞLANTI BEKLENİYOR</div>
     <div class="score-val" id="s1-val" style="color:var(--p1-color)">0</div>
 </div>
 
 <div id="game-container">
     <div id="countdown">3</div>
-
-    <div id="main-menu" class="menu-layer">
-        <h2 style="color:var(--gold); margin-bottom:10px;">FOOTBALL LEGENDARY</h2>
-        <div class="btn-group">
-            <input type="text" id="user-name" placeholder="ADINIZI YAZIN" maxlength="12">
-            <button class="btn btn-green" onclick="setupPeer(true)">ODA KUR (HOST)</button>
-            <input type="text" id="join-id" placeholder="ODA ID GİRİN">
-            <button class="btn btn-blue" onclick="setupPeer(false)">ODAYA KATIL</button>
-            <div id="id-area" style="display:none; margin-top:5px; background: #222; padding: 5px; border-radius: 5px;">
-                <span id="my-id-text" style="color:var(--gold); font-weight:bold; font-size: 0.8rem;"></span>
-                <button onclick="copyID()" style="font-size: 0.6rem; padding: 2px;">KOPYALA</button>
-            </div>
-        </div>
-        
-        <div id="chat-area">
-            <div id="chat-msgs">Sohbet yükleniyor...</div>
-            <div class="chat-input-area">
-                <input type="text" id="chat-input" placeholder="Mesaj yaz ve Gönder...">
-            </div>
-        </div>
-        <div class="beka-footer" style="margin-top:20px">BEKA STUDIO</div>
+    
+    <div id="ready-screen">
+        <h3 id="ready-status">RAKİP BEKLENİYOR...</h3>
+        <button id="ready-btn" class="btn btn-gold" onclick="sendReady()">HAZIR OL!</button>
     </div>
 
-    <div id="end-menu" class="menu-layer" style="display:none">
-        <h2 id="winner-text" style="color:var(--gold)">KAZANDIN!</h2>
-        <button class="btn btn-blue" onclick="location.reload()">MENÜYE DÖN</button>
+    <div id="main-menu" class="menu-layer">
+        <h1 style="color:var(--gold)">FOOTBALL LEGENDARY</h1>
+        <input type="text" id="user-name" placeholder="ADINIZ" maxlength="10">
+        <button class="btn btn-green" onclick="setupPeer(true)">ODA KUR (HOST)</button>
+        <div id="id-display" style="display:none; margin: 10px; font-size: 0.9rem;">
+            ID: <b id="my-id-text" style="color:var(--gold)"></b>
+        </div>
+        <hr style="width: 80%; border: 0.5px solid #333; margin: 15px;">
+        <input type="text" id="join-id" placeholder="ODA ID GİRİN">
+        <button class="btn btn-blue" onclick="setupPeer(false)">ODAYA KATIL</button>
     </div>
 
     <canvas id="game"></canvas>
 </div>
 
-<div id="controls-row" class="ctrl-row">
-    <div class="ctrl-btn" id="btn-left">◀ SOL</div>
-    <div class="ctrl-btn" id="btn-right">SAĞ ▶</div>
+<div id="bottom-panel">
+    <div id="controls">
+        <div class="ctrl-btn" id="btn-left">◀ SOL</div>
+        <div class="ctrl-btn" id="btn-right">SAĞ ▶</div>
+    </div>
+    <div id="chat-section">
+        <div id="chat-msgs"></div>
+        <input type="text" id="chat-input" placeholder="Mesaj yaz...">
+    </div>
 </div>
 
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-let peer = null, conn = null, isHost = false, myName = "Misafir";
+let peer = null, conn = null, isHost = false, myName = "Oyuncu";
+let amIReady = false, isOpponentReady = false;
 
-// SES SİSTEMİ
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function playSound(freq, type, duration) {
-    try {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = type; osc.frequency.value = freq;
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start();
-        gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
-        osc.stop(audioCtx.currentTime + duration);
-    } catch(e) {}
-}
-
-// Oyun Değişkenleri ve İlk Render Ayarları
 let score1 = 0, score2 = 0, gameActive = false, inCountdown = false;
-const pW = 120, pH = 20;
-let p1 = { x: 0, y: 0, dx: 0, color: "#00d2ff" };
-let p2 = { x: 0, y: 0, dx: 0, color: "#ff416c" };
-let ball = { x: -100, y: -100, dx: 4, dy: 4, r: 12 }; // Topu başta dışarı at
+const pW = 100, pH = 15;
+let p1 = { x: 0, y: 0, dx: 0, color: "#00d2ff" }; // Yerel Oyuncu
+let p2 = { x: 0, y: 0, dx: 0, color: "#ff416c" }; // Rakip
+let ball = { x: -100, y: -100, dx: 4, dy: 4, r: 10 };
 
 function resize() {
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;
-    p1.x = p2.x = canvas.width/2 - pW/2;
-    p1.y = canvas.height - 50; p2.y = 50;
+    p1.y = canvas.height - 30;
+    p2.y = 30;
+    if(!gameActive) { p1.x = p2.x = canvas.width/2 - pW/2; }
 }
 window.addEventListener('resize', resize);
 resize();
 
-// ONLINE BAĞLANTI SİSTEMİ
 function setupPeer(asHost) {
     isHost = asHost;
-    myName = document.getElementById("user-name").value || "Misafir";
+    myName = document.getElementById("user-name").value || "Oyuncu";
     peer = new Peer();
 
     peer.on('open', (id) => {
         if(isHost) {
-            document.getElementById("id-area").style.display = "block";
+            document.getElementById("id-display").style.display = "block";
             document.getElementById("my-id-text").innerText = id;
-            addChat("SİSTEM", "Oda kuruldu. Arkadaşını bekliyor...");
+            addChat("SİSTEM", "Oda kuruldu, ID'yi arkadaşına gönder.");
         } else {
             const targetId = document.getElementById("join-id").value;
-            if(!targetId) return alert("Lütfen Oda ID girin!");
-            conn = peer.connect(targetId, { metadata: { name: myName } });
-            handleConnection();
+            conn = peer.connect(targetId);
+            initConn();
         }
     });
 
     peer.on('connection', (c) => {
         conn = c;
-        handleConnection();
+        initConn();
     });
 }
 
-function handleConnection() {
+function initConn() {
     conn.on('open', () => {
         document.getElementById("main-menu").style.display = "none";
-        document.getElementById("controls-row").style.display = "flex";
-        document.getElementById("match-tag").innerText = "MAÇ BAŞLADI";
-        startGame();
+        document.getElementById("bottom-panel").style.display = "flex";
+        document.getElementById("ready-screen").style.display = "flex";
+        document.getElementById("status-text").innerText = "BAĞLANDI";
+        resize();
+        addChat("SİSTEM", "Bağlantı başarılı! Hazır butonuna bas.");
     });
 
     conn.on('data', (data) => {
         if(data.type === 'move') p2.x = canvas.width - data.x - pW;
         if(data.type === 'ball') { ball.x = canvas.width - data.x; ball.y = canvas.height - data.y; }
-        if(data.type === 'score') { score1 = data.s2; score2 = data.s1; updateUI(); }
-        if(data.type === 'chat') addChat(data.name, data.msg);
-        if(data.type === 'start') runCountdown();
-        if(data.type === 'win') showWinner(data.winner);
+        if(data.type === 'chat') addChat("RAKİP", data.msg);
+        if(data.type === 'ready') { isOpponentReady = true; checkStart(); }
+        if(data.type === 'sync_score') { score1 = data.s2; score2 = data.s1; updateUI(); }
+        if(data.type === 'start_game') { startCountdown(); }
     });
 }
 
-// SOHBET GÖNDERME
-document.getElementById("chat-input").addEventListener("keypress", (e) => {
-    if(e.key === "Enter") {
-        const msg = e.target.value.trim();
-        if(!msg) return;
-        if(conn && conn.open) conn.send({ type: 'chat', name: myName, msg: msg });
-        addChat(myName, msg);
-        e.target.value = "";
+function sendReady() {
+    amIReady = true;
+    document.getElementById("ready-btn").style.opacity = "0.5";
+    document.getElementById("ready-btn").innerText = "BEKLENİYOR...";
+    conn.send({ type: 'ready' });
+    checkStart();
+}
+
+function checkStart() {
+    if(amIReady && isOpponentReady) {
+        if(isHost) {
+            conn.send({ type: 'start_game' });
+            startCountdown();
+        }
+    } else if (isOpponentReady) {
+        document.getElementById("ready-status").innerText = "RAKİP HAZIR!";
     }
-});
-
-function addChat(name, msg) {
-    const msgs = document.getElementById("chat-msgs");
-    msgs.innerHTML += `<div><b style="color:var(--gold)">${name}:</b> ${msg}</div>`;
-    msgs.scrollTop = msgs.scrollHeight;
 }
 
-function copyID() {
-    const id = document.getElementById("my-id-text").innerText;
-    navigator.clipboard.writeText(id).then(() => alert("Kopyalandı!"));
-}
-
-// OYUN DÖNGÜSÜ
-function startGame() {
-    resize();
-    gameActive = true;
-    if(isHost) runCountdown();
-}
-
-function runCountdown() {
+function startCountdown() {
+    document.getElementById("ready-screen").style.display = "none";
     inCountdown = true;
-    if(isHost) conn.send({ type: 'start' });
-    const cdDiv = document.getElementById("countdown");
-    cdDiv.style.display = "block";
+    gameActive = true;
     let count = 3;
-    cdDiv.innerText = count;
-    playSound(440, 'sine', 0.2);
+    const cd = document.getElementById("countdown");
+    cd.style.display = "block";
+    cd.innerText = count;
 
     let timer = setInterval(() => {
         count--;
         if(count <= 0) {
             clearInterval(timer);
-            cdDiv.style.display = "none";
+            cd.style.display = "none";
             inCountdown = false;
-            if(isHost) { 
-                ball.x = canvas.width/2; 
-                ball.y = canvas.height/2; 
-                ball.dy = 4; ball.dx = (Math.random() - 0.5) * 8; 
-            }
+            if(isHost) resetBall();
         } else {
-            cdDiv.innerText = count;
-            playSound(440, 'sine', 0.2);
+            cd.innerText = count;
         }
     }, 1000);
+}
+
+function resetBall() {
+    ball.x = canvas.width / 2;
+    ball.y = canvas.height / 2;
+    ball.dx = (Math.random() > 0.5 ? 4 : -4);
+    ball.dy = 4;
 }
 
 function updateUI() {
@@ -224,107 +196,106 @@ function updateUI() {
     document.getElementById("s2-val").innerText = score2;
 }
 
-function gameLoop() {
-    if(!gameActive) {
-        // Maç başlamadan önce bile sahayı çiz ki boş durmasın
-        ctx.clearRect(0,0,canvas.width, canvas.height);
-        ctx.strokeStyle = "rgba(255,255,255,0.05)";
-        ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
-        requestAnimationFrame(gameLoop);
-        return;
-    }
-    
-    ctx.clearRect(0,0,canvas.width, canvas.height);
-    
-    // Saha Görseli
-    ctx.strokeStyle = "rgba(255,255,255,0.1)";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
-    ctx.beginPath();
-    ctx.moveTo(10, canvas.height/2); ctx.lineTo(canvas.width-10, canvas.height/2);
-    ctx.stroke();
+// OYUN DÖNGÜSÜ
+function update() {
+    if(!gameActive) { requestAnimationFrame(update); return; }
 
     if(!inCountdown) {
+        // Kendi hareketimiz
         p1.x += p1.dx;
-        p1.x = Math.max(10, Math.min(canvas.width - pW - 10, p1.x));
-        if(conn && conn.open) conn.send({ type: 'move', x: p1.x });
+        p1.x = Math.max(0, Math.min(canvas.width - pW, p1.x));
+        conn.send({ type: 'move', x: p1.x });
 
         if(isHost) {
-            ball.x += ball.dx; ball.y += ball.dy;
-            
-            // Duvar Çarpması
-            if(ball.x <= ball.r + 10 || ball.x >= canvas.width - ball.r - 10) { 
-                ball.dx *= -1; playSound(300, 'square', 0.05); 
-            }
+            ball.x += ball.dx;
+            ball.y += ball.dy;
 
-            // Raket Çarpması
+            // Duvarlar
+            if(ball.x < ball.r || ball.x > canvas.width - ball.r) ball.dx *= -1;
+
+            // Raketler
             if(ball.y + ball.r > p1.y && ball.x > p1.x && ball.x < p1.x + pW) {
-                ball.dy = -Math.abs(ball.dy); 
-                ball.dx = (ball.x - (p1.x + pW/2)) * 0.2;
-                playSound(600, 'triangle', 0.1);
+                ball.dy = -Math.abs(ball.dy);
+                ball.dx += (ball.x - (p1.x + pW/2)) * 0.1;
             }
             if(ball.y - ball.r < p2.y + pH && ball.x > p2.x && ball.x < p2.x + pW) {
-                ball.dy = Math.abs(ball.dy); 
-                ball.dx = (ball.x - (p2.x + pW/2)) * 0.2;
-                playSound(600, 'triangle', 0.1);
+                ball.dy = Math.abs(ball.dy);
+                ball.dx += (ball.x - (p2.x + pW/2)) * 0.1;
             }
 
-            // Gol Durumu
-            if(ball.y < 0) { score1++; scoreEvent(); }
-            if(ball.y > canvas.height) { score2++; scoreEvent(); }
-            
-            // Host koordinatları gönderir
+            // Sayı durumu
+            if(ball.y < 0) { score1++; scorePoint(); }
+            else if(ball.y > canvas.height) { score2++; scorePoint(); }
+
             conn.send({ type: 'ball', x: ball.x, y: ball.y });
         }
     }
 
-    // Top Çizimi (Sadece koordinatlar geçerliyse)
-    if(ball.x > 0) {
-        ctx.fillStyle = "#fff"; 
-        ctx.beginPath(); 
-        ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); 
+    draw();
+    requestAnimationFrame(update);
+}
+
+function scorePoint() {
+    updateUI();
+    conn.send({ type: 'sync_score', s1: score1, s2: score2 });
+    resetBall();
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Saha çizgisi
+    ctx.strokeStyle = "rgba(255,255,255,0.1)";
+    ctx.beginPath();
+    ctx.moveTo(0, canvas.height/2); ctx.lineTo(canvas.width, canvas.height/2);
+    ctx.stroke();
+
+    // Top
+    if(gameActive) {
+        ctx.fillStyle = "white";
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
         ctx.fill();
     }
 
-    // Raket Çizimleri
-    ctx.fillStyle = p1.color; ctx.fillRect(p1.x, p1.y, pW, pH);
-    ctx.fillStyle = p2.color; ctx.fillRect(p2.x, p2.y, pW, pH);
-
-    requestAnimationFrame(gameLoop);
+    // Raketler
+    ctx.fillStyle = p1.color;
+    ctx.fillRect(p1.x, p1.y, pW, pH);
+    ctx.fillStyle = p2.color;
+    ctx.fillRect(p2.x, p2.y, pW, pH);
 }
 
-function scoreEvent() {
-    playSound(200, 'sawtooth', 0.5);
-    updateUI();
-    if(score1 >= 3 || score2 >= 3) {
-        let winnerName = score1 >= 3 ? myName : "Rakip";
-        showWinner(winnerName);
-        conn.send({ type: 'win', winner: winnerName });
-    } else {
-        runCountdown();
-        conn.send({ type: 'score', s1: score1, s2: score2 });
+// SOHBET
+document.getElementById("chat-input").addEventListener("keypress", (e) => {
+    if(e.key === "Enter" && e.target.value.trim() !== "") {
+        const msg = e.target.value;
+        addChat("SEN", msg);
+        if(conn) conn.send({ type: 'chat', msg: msg });
+        e.target.value = "";
     }
-}
-
-function showWinner(name) {
-    gameActive = false;
-    document.getElementById("end-menu").style.display = "flex";
-    document.getElementById("winner-text").innerText = name.toUpperCase() + " KAZANDI!";
-}
-
-const move = (v) => p1.dx = v;
-document.getElementById("btn-left").ontouchstart = (e) => { e.preventDefault(); move(-12); };
-document.getElementById("btn-right").ontouchstart = (e) => { e.preventDefault(); move(12); };
-document.getElementById("btn-left").ontouchend = document.getElementById("btn-right").ontouchend = () => move(0);
-
-// Klavye desteği (Test için)
-window.addEventListener('keydown', (e) => {
-    if(e.key === "ArrowLeft") move(-12);
-    if(e.key === "ArrowRight") move(12);
 });
-window.addEventListener('keyup', () => move(0));
 
-requestAnimationFrame(gameLoop);
+function addChat(sender, msg) {
+    const box = document.getElementById("chat-msgs");
+    box.innerHTML += `<div><b>${sender}:</b> ${msg}</div>`;
+    box.scrollTop = box.scrollHeight;
+}
+
+// KONTROLLER
+const handleMove = (val) => p1.dx = val;
+document.getElementById("btn-left").ontouchstart = () => handleMove(-8);
+document.getElementById("btn-right").ontouchstart = () => handleMove(8);
+document.getElementById("btn-left").ontouchend = document.getElementById("btn-right").ontouchend = () => handleMove(0);
+
+// Klavye
+window.onkeydown = (e) => {
+    if(e.key === "ArrowLeft") handleMove(-8);
+    if(e.key === "ArrowRight") handleMove(8);
+};
+window.onkeyup = () => handleMove(0);
+
+requestAnimationFrame(update);
 </script>
 </body>
 </html>
+
