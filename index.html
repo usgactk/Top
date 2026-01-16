@@ -13,24 +13,30 @@
         .score-val { font-size: 1.8rem; font-weight: 900; color: white; }
         #match-tag { background: var(--gold); color: #000; padding: 2px 8px; font-size: 0.7rem; font-weight: bold; border-radius: 4px; }
 
-        #game-container { position: relative; width: 100vw; flex-grow: 1; background: var(--field-green); border-top: 2px solid #333; overflow: hidden; }
-        canvas { width: 100%; height: 100%; display: block; background: var(--field-green); }
+        #game-container { position: relative; width: 100vw; flex-grow: 1; background: var(--field-green); overflow: hidden; }
+        canvas { width: 100%; height: 100%; display: block; }
 
         .menu-layer { position: absolute; inset: 0; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; color: white; text-align: center; padding: 20px; }
         .btn { padding: 14px; font-size: 0.85rem; cursor: pointer; border: none; color: white; border-radius: 8px; font-weight: bold; text-transform: uppercase; width: 260px; margin: 5px; }
         .btn-green { background: #2e7d32; }
         .btn-blue { background: #1565c0; }
         .btn-gold { background: var(--gold); color: #000; }
+        .btn-red { background: #c62828; }
 
         input { width: 260px; padding: 12px; border-radius: 5px; border: 1px solid var(--gold); background: #222; color: white; text-align: center; margin-bottom: 10px; }
 
-        #chat-area { width: 260px; height: 150px; background: rgba(0,0,0,0.8); border: 1px solid #444; border-radius: 8px; margin-top: 10px; display: flex; flex-direction: column; }
-        #chat-msgs { flex-grow: 1; overflow-y: auto; padding: 5px; font-size: 0.7rem; text-align: left; }
-        #chat-input { width: 100%; background: #111; border: none; color: white; padding: 8px; margin: 0; border-radius: 0 0 8px 8px; text-align: left; }
+        /* LOBİ VE SOHBET */
+        .lobby-box { width: 280px; background: rgba(255,255,255,0.05); border: 1px solid #444; border-radius: 10px; padding: 15px; margin-bottom: 10px; }
+        #player-list { list-style: none; padding: 0; margin: 10px 0; font-size: 0.9rem; }
+        #player-list li { padding: 5px; border-bottom: 1px solid #333; }
+        
+        #chat-area { width: 280px; height: 150px; background: #000; border: 1px solid #444; border-radius: 8px; display: flex; flex-direction: column; }
+        #chat-msgs { flex: 1; overflow-y: auto; padding: 5px; font-size: 0.7rem; text-align: left; }
+        #chat-input { width: 100%; background: #111; border: none; color: white; padding: 8px; margin: 0; box-sizing: border-box; }
 
         #countdown { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--gold); font-size: 80px; font-weight: 900; display: none; z-index: 150; }
 
-        .ctrl-row { width: 100%; height: 90px; display: none; justify-content: space-around; align-items: center; background: #000; padding: 10px; box-sizing: border-box; }
+        .ctrl-row { width: 100%; height: 90px; display: none; justify-content: space-around; align-items: center; background: #000; }
         .ctrl-btn { width: 45%; height: 70px; background: #222; border: 1px solid #444; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; }
         .beka-footer { color: #444; font-size: 0.6rem; font-weight: bold; letter-spacing: 2px; margin: 5px 0; }
     </style>
@@ -39,7 +45,7 @@
 
 <div id="scoreboard">
     <div class="score-val" id="s2-val" style="color:var(--p2-color)">0</div>
-    <div id="match-tag">BEKLEMEDE</div>
+    <div id="match-tag">LOBİ</div>
     <div class="score-val" id="s1-val" style="color:var(--p1-color)">0</div>
 </div>
 
@@ -49,22 +55,33 @@
     <div id="main-menu" class="menu-layer">
         <h2 style="color:var(--gold)">FOOTBALL LEGENDARY</h2>
         <input type="text" id="user-name" placeholder="ADINIZI YAZIN" maxlength="12">
-        <button class="btn btn-green" onclick="setupPeer(true)">ODA KUR (HOST)</button>
+        <button class="btn btn-green" onclick="initPeer(true)">ODA KUR</button>
         <input type="text" id="join-id" placeholder="ODA ID GİRİN">
-        <button class="btn btn-blue" onclick="setupPeer(false)">ODAYA KATIL</button>
-        <div id="id-display" style="display:none; color:var(--gold); font-weight:bold; margin: 10px; background: #222; padding: 5px; border-radius: 5px;">
-            ID: <span id="my-id-text"></span>
+        <button class="btn btn-blue" onclick="initPeer(false)">ODAYA KATIL</button>
+        <div class="beka-footer" style="margin-top:20px">BEKA STUDIO</div>
+    </div>
+
+    <div id="lobby-layer" class="menu-layer" style="display:none">
+        <div class="lobby-box">
+            <div id="id-area" style="font-size:0.8rem; margin-bottom:10px;">
+                ODA ID: <b id="my-id-display" style="color:var(--gold)">...</b>
+                <button onclick="copyID()" style="font-size:0.6rem;">KOPYALA</button>
+            </div>
+            <ul id="player-list">
+                <li>Oyuncular Bekleniyor...</li>
+            </ul>
         </div>
         <div id="chat-area">
-            <div id="chat-msgs">Sohbet...</div>
-            <input type="text" id="chat-input" placeholder="Mesaj yaz ve Enter'a bas...">
+            <div id="chat-msgs"></div>
+            <input type="text" id="chat-input" placeholder="Mesaj yaz...">
         </div>
-        <div class="beka-footer" style="margin-top:10px">BEKA STUDIO</div>
+        <button id="start-btn" class="btn btn-gold" style="display:none;" onclick="hostStartGame()">OYUNU BAŞLAT</button>
+        <button class="btn btn-red" onclick="location.reload()">ÇIK</button>
     </div>
 
     <div id="end-menu" class="menu-layer" style="display:none">
         <h2 id="winner-text" style="color:var(--gold)">KAZANDIN!</h2>
-        <button class="btn btn-blue" onclick="location.reload()">TEKRAR OYNA</button>
+        <button class="btn btn-blue" onclick="location.reload()">LOBİYE DÖN</button>
     </div>
 
     <canvas id="game"></canvas>
@@ -78,178 +95,191 @@
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-let peer = null, conn = null, isHost = false, myName = "Misafir";
+let peer = null, conn = null, isHost = false, myName = "";
+let opponentName = "Rakip";
 
-// Nesnelerin Tanımı (Undefined hatasını önlemek için sabit değerlerle başlar)
-const pW = 100, pH = 20;
+// Oyun Nesneleri
+const pW = 110, pH = 20;
 let score1 = 0, score2 = 0, gameActive = false, inCountdown = false;
-let p1 = { x: 100, y: 500, dx: 0, color: "#00d2ff" };
-let p2 = { x: 100, y: 100, dx: 0, color: "#ff416c" };
+let p1 = { x: 0, y: 0, dx: 0, color: "#00d2ff" };
+let p2 = { x: 0, y: 0, dx: 0, color: "#ff416c" };
 let ball = { x: -100, y: -100, dx: 4, dy: 4, r: 12 };
 
 function resize() {
     canvas.width = window.innerWidth;
     canvas.height = canvas.parentElement.clientHeight;
     p1.x = p2.x = canvas.width / 2 - pW / 2;
-    p1.y = canvas.height - 40; 
-    p2.y = 40;
+    p1.y = canvas.height - 40; p2.y = 40;
 }
 window.addEventListener('resize', resize);
 resize();
 
-// PeerJS ve Sohbet Sistemi
-function setupPeer(hostMode) {
+// Bağlantı Sistemi
+function initPeer(hostMode) {
+    myName = document.getElementById("user-name").value.trim() || "Oyuncu";
     isHost = hostMode;
-    myName = document.getElementById("user-name").value || "Misafir";
     peer = new Peer();
 
     peer.on('open', (id) => {
-        if(isHost) {
-            document.getElementById("id-display").style.display = "block";
-            document.getElementById("my-id-text").innerText = id;
-            addChat("SİSTEM", "Oda açıldı, ID'yi arkadaşına gönder.");
-        } else {
+        document.getElementById("main-menu").style.display = "none";
+        document.getElementById("lobby-layer").style.display = "flex";
+        document.getElementById("my-id-display").innerText = id;
+        updatePlayerList();
+
+        if (!isHost) {
             const targetId = document.getElementById("join-id").value;
-            if(!targetId) return alert("ID girmelisin!");
-            conn = peer.connect(targetId);
-            handleConnection();
+            conn = peer.connect(targetId, { metadata: { name: myName } });
+            setupConnection();
         }
     });
 
     peer.on('connection', (c) => {
         conn = c;
-        handleConnection();
+        opponentName = c.metadata.name;
+        setupConnection();
+        // Host rakibe kendi adını gönderir
+        setTimeout(() => conn.send({ type: 'lobby_update', name: myName }), 500);
     });
 }
 
-function handleConnection() {
+function setupConnection() {
     conn.on('open', () => {
-        document.getElementById("main-menu").style.display = "none";
-        document.getElementById("controls-row").style.display = "flex";
-        document.getElementById("match-tag").innerText = "CANLI";
-        gameActive = true;
-        if(isHost) startRound();
+        updatePlayerList();
+        if (isHost) document.getElementById("start-btn").style.display = "block";
+        addChat("SİSTEM", "Bağlantı kuruldu!");
     });
 
     conn.on('data', (data) => {
-        if(data.type === 'move') p2.x = canvas.width - data.x - pW;
-        if(data.type === 'ball') { ball.x = canvas.width - data.x; ball.y = canvas.height - data.y; }
-        if(data.type === 'chat') addChat(data.name, data.msg);
-        if(data.type === 'score') { score1 = data.s2; score2 = data.s1; updateUI(); }
-        if(data.type === 'start') runCountdownUI();
-        if(data.type === 'win') showWinner(data.winner);
+        if (data.type === 'lobby_update') { opponentName = data.name; updatePlayerList(); }
+        if (data.type === 'chat') addChat(opponentName, data.msg);
+        if (data.type === 'start_signal') runMatchCountdown();
+        if (data.type === 'move') p2.x = canvas.width - data.x - pW;
+        if (data.type === 'ball') { ball.x = canvas.width - data.x; ball.y = canvas.height - data.y; }
+        if (data.type === 'score') { score1 = data.s2; score2 = data.s1; updateScoreUI(); }
+        if (data.type === 'win') showEndScreen(data.winner);
     });
 }
 
-function addChat(name, msg) {
-    const box = document.getElementById("chat-msgs");
-    box.innerHTML += `<div><b>${name}:</b> ${msg}</div>`;
-    box.scrollTop = box.scrollHeight;
+function updatePlayerList() {
+    const list = document.getElementById("player-list");
+    list.innerHTML = `<li>${myName} (Sen)</li>`;
+    if (conn && conn.open) list.innerHTML += `<li>${opponentName}</li>`;
 }
 
+// Sohbet
 document.getElementById("chat-input").addEventListener("keypress", (e) => {
-    if(e.key === "Enter") {
-        const msg = e.target.value;
-        if(!msg) return;
-        if(conn && conn.open) conn.send({ type: 'chat', name: myName, msg: msg });
+    if (e.key === "Enter") {
+        const msg = e.target.value.trim();
+        if (!msg) return;
+        if (conn && conn.open) conn.send({ type: 'chat', msg: msg });
         addChat(myName, msg);
         e.target.value = "";
     }
 });
 
-// Oyun Döngüsü ve Fizik
-function startRound() {
-    if(isHost) conn.send({ type: 'start' });
-    runCountdownUI();
+function addChat(user, msg) {
+    const box = document.getElementById("chat-msgs");
+    box.innerHTML += `<div><b>${user}:</b> ${msg}</div>`;
+    box.scrollTop = box.scrollHeight;
 }
 
-function runCountdownUI() {
+function copyID() {
+    const id = document.getElementById("my-id-display").innerText;
+    navigator.clipboard.writeText(id).then(() => alert("ID Kopyalandı!"));
+}
+
+// Oyun Başlatma
+function hostStartGame() {
+    if (!conn || !conn.open) return alert("Rakip bekleniyor!");
+    conn.send({ type: 'start_signal' });
+    runMatchCountdown();
+}
+
+function runMatchCountdown() {
+    document.getElementById("lobby-layer").style.display = "none";
+    document.getElementById("controls-row").style.display = "flex";
+    document.getElementById("match-tag").innerText = "MAÇ";
     inCountdown = true;
+    gameActive = true;
     const cd = document.getElementById("countdown");
     cd.style.display = "block";
     let count = 3;
     cd.innerText = count;
     let timer = setInterval(() => {
         count--;
-        if(count <= 0) {
+        if (count <= 0) {
             clearInterval(timer);
             cd.style.display = "none";
             inCountdown = false;
-            if(isHost) { ball.x = canvas.width/2; ball.y = canvas.height/2; ball.dy = 5; ball.dx = (Math.random()-0.5)*6; }
+            if (isHost) { ball.x = canvas.width/2; ball.y = canvas.height/2; ball.dy = 5; ball.dx = (Math.random()-0.5)*6; }
         } else cd.innerText = count;
     }, 1000);
 }
 
-function updateUI() {
+// Render ve Fizik
+function updateScoreUI() {
     document.getElementById("s1-val").innerText = score1;
     document.getElementById("s2-val").innerText = score2;
 }
 
-function update() {
-    if(!gameActive || inCountdown) return;
-
-    p1.x += p1.dx;
-    p1.x = Math.max(0, Math.min(canvas.width - pW, p1.x));
-    if(conn && conn.open) conn.send({ type: 'move', x: p1.x });
-
-    if(isHost) {
-        ball.x += ball.dx; ball.y += ball.dy;
-        if(ball.x <= ball.r || ball.x >= canvas.width - ball.r) ball.dx *= -1;
-
-        if(ball.y + ball.r > p1.y && ball.x > p1.x && ball.x < p1.x + pW) ball.dy = -Math.abs(ball.dy);
-        if(ball.y - ball.r < p2.y + pH && ball.x > p2.x && ball.x < p2.x + pW) ball.dy = Math.abs(ball.dy);
-
-        if(ball.y < 0) { score1++; checkWin(); }
-        if(ball.y > canvas.height) { score2++; checkWin(); }
-        conn.send({ type: 'ball', x: ball.x, y: ball.y });
-    }
-}
-
-function checkWin() {
-    updateUI();
-    if(conn && conn.open) conn.send({ type: 'score', s1: score1, s2: score2 });
-    if(score1 >= 3 || score2 >= 3) {
-        let winName = score1 >= 3 ? myName : "Rakip";
-        showWinner(winName);
-        conn.send({ type: 'win', winner: winName });
-    } else startRound();
-}
-
-function showWinner(name) {
-    gameActive = false;
-    document.getElementById("end-menu").style.display = "flex";
-    document.getElementById("winner-text").innerText = name + " KAZANDI!";
-}
-
-function draw() {
+function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Saha Çizgisi
+    // Saha Çizgileri
     ctx.strokeStyle = "rgba(255,255,255,0.1)";
     ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
     ctx.beginPath(); ctx.moveTo(0, canvas.height/2); ctx.lineTo(canvas.width, canvas.height/2); ctx.stroke();
 
-    // Raketler
+    if (gameActive && !inCountdown) {
+        p1.x += p1.dx;
+        p1.x = Math.max(0, Math.min(canvas.width - pW, p1.x));
+        if (conn && conn.open) conn.send({ type: 'move', x: p1.x });
+
+        if (isHost) {
+            ball.x += ball.dx; ball.y += ball.dy;
+            if (ball.x <= ball.r || ball.x >= canvas.width - ball.r) ball.dx *= -1;
+            if (ball.y + ball.r > p1.y && ball.x > p1.x && ball.x < p1.x + pW) ball.dy = -Math.abs(ball.dy);
+            if (ball.y - ball.r < p2.y + pH && ball.x > p2.x && ball.x < p2.x + pW) ball.dy = Math.abs(ball.dy);
+            if (ball.y < 0) { score1++; checkMatchStatus(); }
+            if (ball.y > canvas.height) { score2++; checkMatchStatus(); }
+            conn.send({ type: 'ball', x: ball.x, y: ball.y });
+        }
+    }
+
+    // Çizim
     ctx.fillStyle = p1.color; ctx.fillRect(p1.x, p1.y, pW, pH);
     ctx.fillStyle = p2.color; ctx.fillRect(p2.x, p2.y, pW, pH);
-
-    // Top
-    if(ball.x > 0) {
+    if (ball.x > 0) {
         ctx.fillStyle = "white";
         ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2); ctx.fill();
     }
-
-    update();
-    requestAnimationFrame(draw);
+    requestAnimationFrame(gameLoop);
 }
 
-// Kontroller
+function checkMatchStatus() {
+    updateScoreUI();
+    conn.send({ type: 'score', s1: score1, s2: score2 });
+    if (score1 >= 3 || score2 >= 3) {
+        const winName = score1 >= 3 ? myName : opponentName;
+        showEndScreen(winName);
+        conn.send({ type: 'win', winner: winName });
+    } else {
+        ball.x = canvas.width/2; ball.y = canvas.height/2;
+    }
+}
+
+function showEndScreen(name) {
+    gameActive = false;
+    document.getElementById("end-menu").style.display = "flex";
+    document.getElementById("winner-text").innerText = name.toUpperCase() + " KAZANDI!";
+}
+
 const move = (v) => p1.dx = v;
 document.getElementById("btn-left").ontouchstart = (e) => { e.preventDefault(); move(-12); };
 document.getElementById("btn-right").ontouchstart = (e) => { e.preventDefault(); move(12); };
 document.getElementById("btn-left").ontouchend = document.getElementById("btn-right").ontouchend = () => move(0);
 
-draw();
+requestAnimationFrame(gameLoop);
 </script>
 </body>
 </html>
