@@ -25,18 +25,25 @@
 
         input { width: 100%; padding: 12px; border-radius: 5px; border: 1px solid var(--gold); background: #222; color: white; text-align: center; margin-bottom: 10px; box-sizing: border-box; font-size: 1rem; }
 
+        /* ID KOPYALAMA ALANI */
         #id-display-container {
-            background: #222; padding: 15px; border-radius: 8px; border: 1px dashed var(--gold);
-            margin-bottom: 15px; width: 100%; box-sizing: border-box;
+            background: #222; padding: 15px; border-radius: 12px; border: 2px solid var(--gold);
+            margin-bottom: 15px; width: 100%; box-sizing: border-box; position: relative;
         }
-        #my-id-text { color: var(--gold); font-weight: bold; font-size: 1.1rem; word-break: break-all; margin: 10px 0; display: block; }
+        #my-id-text { color: var(--gold); font-weight: bold; font-size: 1.1rem; word-break: break-all; margin: 10px 0; display: block; letter-spacing: 1px; }
+        .copy-hint { font-size: 0.7rem; color: #888; margin-top: 5px; }
+        
+        #copy-status { 
+            position: absolute; top: -30px; left: 50%; transform: translateX(-50%);
+            background: white; color: black; padding: 4px 10px; border-radius: 4px;
+            font-size: 0.7rem; display: none; 
+        }
 
         .ctrl-row { width: 100%; height: 90px; display: none; justify-content: space-around; align-items: center; background: #000; padding: 10px; box-sizing: border-box; }
         .ctrl-btn { width: 45%; height: 70px; background: #222; border: 1px solid #444; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; }
         
         .beka-footer { color: #444; font-size: 0.6rem; font-weight: bold; letter-spacing: 2px; margin: 5px 0; }
         
-        /* Loading Spinner */
         .spinner { border: 4px solid rgba(255, 255, 255, 0.3); border-top: 4px solid var(--gold); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 10px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
@@ -65,10 +72,12 @@
 
     <div id="host-wait-layer" class="menu-layer" style="display:none">
         <div id="id-display-container">
+            <div id="copy-status">KOPYALANDI!</div>
             <span>ODA OLUŞTURULUYOR...</span>
             <div id="spinner" class="spinner"></div>
             <span id="my-id-text">ID ALINIYOR...</span>
-            <small style="color:#888">Bu ID'yi rakibe gönderin</small>
+            <button class="btn btn-gold" id="copy-btn" style="width: 100%; display: none;" onclick="copyID()">ID KOPYALA</button>
+            <div class="copy-hint" id="copy-hint-text">ID belirdiğinde kopyalayın ve rakibe atın.</div>
         </div>
         <button class="btn btn-red" onclick="location.reload()">İPTAL</button>
     </div>
@@ -93,6 +102,7 @@ const ctx = canvas.getContext("2d");
 let peer = null;
 let conn = null;
 let isHost = false;
+let lastID = "";
 
 // Oyun Değişkenleri
 let score1 = 0, score2 = 0, gameActive = false;
@@ -110,9 +120,6 @@ window.addEventListener('resize', resize); resize();
 // PEERJS BAĞLANTI KURULUMU
 function setupPeer(asHost) {
     isHost = asHost;
-    const name = document.getElementById("user-name").value || "Oyuncu";
-    
-    // Menüyü kapat, yükleme ekranını aç
     document.getElementById("main-menu").style.display = "none";
     
     if(isHost) {
@@ -125,9 +132,11 @@ function setupPeer(asHost) {
 
     peer.on('open', (id) => {
         if(isHost) {
+            lastID = id;
             document.getElementById("spinner").style.display = "none";
             document.getElementById("my-id-text").innerText = id;
-            console.log("Oda ID alındı: " + id);
+            document.getElementById("copy-btn").style.display = "block";
+            document.getElementById("copy-hint-text").innerText = "ID kopyalamak için butona basın.";
         } else {
             const targetId = document.getElementById("join-id").value;
             conn = peer.connect(targetId);
@@ -139,16 +148,20 @@ function setupPeer(asHost) {
         conn = c;
         handleConnection();
     });
+}
 
-    peer.on('error', (err) => {
-        alert("Hata oluştu: " + err.type);
-        location.reload();
+// KOPYALAMA FONKSİYONU
+function copyID() {
+    if(!lastID) return;
+    navigator.clipboard.writeText(lastID).then(() => {
+        const status = document.getElementById("copy-status");
+        status.style.display = "block";
+        setTimeout(() => { status.style.display = "none"; }, 2000);
     });
 }
 
 function handleConnection() {
     conn.on('open', () => {
-        console.log("Bağlantı başarılı!");
         hideLayers();
         document.getElementById("controls-row").style.display = "flex";
         startGame();
@@ -156,10 +169,8 @@ function handleConnection() {
 
     conn.on('data', (data) => {
         if(data.type === 'move') {
-            // Karşı tarafın pozisyonunu ters çevirerek çiz
             p2.x = canvas.width - data.x - pW;
         } else if(data.type === 'ball' && !isHost) {
-            // Katılımcı topu hosttan alır ve ters aynalar
             ball.x = canvas.width - data.x;
             ball.y = canvas.height - data.y;
         } else if(data.type === 'score') {
@@ -192,10 +203,9 @@ function updateUI() {
 
 function gameLoop() {
     if(!gameActive) return;
-
     ctx.clearRect(0,0,canvas.width, canvas.height);
     
-    // Saha çizgileri
+    // Saha Çizgileri
     ctx.strokeStyle = "rgba(255,255,255,0.1)";
     ctx.lineWidth = 2;
     ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
@@ -204,23 +214,15 @@ function gameLoop() {
     ctx.lineTo(canvas.width-10, canvas.height/2); 
     ctx.stroke();
 
-    // Raket hareketi
     p1.x += p1.dx;
     p1.x = Math.max(10, Math.min(canvas.width - pW - 10, p1.x));
     
-    // Pozisyonu gönder
-    if(conn && conn.open) {
-        conn.send({ type: 'move', x: p1.x });
-    }
+    if(conn && conn.open) conn.send({ type: 'move', x: p1.x });
 
-    // TOP FİZİĞİ (Sadece Host hesaplar)
     if(isHost) {
         ball.x += ball.dx; ball.y += ball.dy;
-
-        // Yan duvar çarpması
         if(ball.x <= ball.r + 10 || ball.x >= canvas.width - ball.r - 10) ball.dx *= -1;
 
-        // Raket çarpması
         if(ball.y + ball.r > p1.y && ball.x > p1.x && ball.x < p1.x + pW) {
             ball.dy = -Math.abs(ball.dy);
             ball.dx = ((ball.x - (p1.x + pW/2)) / (pW/2)) * 8;
@@ -230,18 +232,14 @@ function gameLoop() {
             ball.dx = ((ball.x - (p2.x + pW/2)) / (pW/2)) * 8;
         }
 
-        // Gol durumu
         if(ball.y < 0) { score1++; resetBall(); sendScore(); }
         if(ball.y > canvas.height) { score2++; resetBall(); sendScore(); }
 
-        // Top verisini gönder
         if(conn && conn.open) conn.send({ type: 'ball', x: ball.x, y: ball.y });
     }
 
-    // Çizim
     ctx.fillStyle = "#fff";
     ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
-    
     ctx.fillStyle = p1.color; ctx.fillRect(p1.x, p1.y, pW, pH);
     ctx.fillStyle = p2.color; ctx.fillRect(p2.x, p2.y, pW, pH);
 
@@ -260,19 +258,9 @@ function sendScore() {
 
 // KONTROLLER
 const move = (v) => p1.dx = v;
-const bLeft = document.getElementById("btn-left");
-const bRight = document.getElementById("btn-right");
-
-bLeft.ontouchstart = (e) => { e.preventDefault(); move(-12); };
-bRight.ontouchstart = (e) => { e.preventDefault(); move(12); };
-bLeft.ontouchend = bRight.ontouchend = (e) => { e.preventDefault(); move(0); };
-
-// Klavye desteği (PC testi için)
-window.addEventListener('keydown', (e) => {
-    if(e.key === "ArrowLeft") move(-12);
-    if(e.key === "ArrowRight") move(12);
-});
-window.addEventListener('keyup', () => move(0));
+document.getElementById("btn-left").ontouchstart = (e) => { e.preventDefault(); move(-12); };
+document.getElementById("btn-right").ontouchstart = (e) => { e.preventDefault(); move(12); };
+document.getElementById("btn-left").ontouchend = document.getElementById("btn-right").ontouchend = (e) => { e.preventDefault(); move(0); };
 </script>
 </body>
 </html>
